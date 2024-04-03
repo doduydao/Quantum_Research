@@ -37,7 +37,6 @@ qubitOp, offset = qubo.to_ising()
 # print("Offset:", offset)
 # print("Ising Hamiltonian:")
 # print(len(qubitOp.coeffs))
-#
 
 from qiskit_algorithms import QAOA, NumPyMinimumEigensolver
 

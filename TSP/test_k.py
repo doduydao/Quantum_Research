@@ -11,6 +11,7 @@ from qiskit_algorithms.utils import algorithm_globals
 from qiskit.primitives import Sampler
 from qiskit_optimization.algorithms import MinimumEigenOptimizer
 from qiskit_optimization.converters import QuadraticProgramToQubo
+from qiskit.quantum_info import Pauli, SparsePauliOp
 
 
 def draw_graph(G, colors, pos):
@@ -54,12 +55,81 @@ qp2qubo = QuadraticProgramToQubo()
 qubo = qp2qubo.convert(qp)
 print(qubo.prettyprint())
 
-qubitOp, offset = qubo.to_ising()
-print(qubitOp, offset)
+
+def to_ising(quad_prog):
+    num_vars = quad_prog.get_num_vars()
+    pauli_list = []
+    offset = 0.0
+    zero = np.zeros(num_vars, dtype=bool)
+
+    # set a sign corresponding to a maximized or minimized problem.
+    # sign == 1 is for minimized problem. sign == -1 is for maximized problem.
+    sense = quad_prog.objective.sense.value
+    print(sense)
+
+    # convert a constant part of the objective function into Hamiltonian.
+    offset += quad_prog.objective.constant * sense
+    print(offset)
+    linear_part = quad_prog.objective.linear.to_dict().items()
+    print(linear_part)
+    # convert linear parts of the objective function into Hamiltonian.
+    for idx, coef in linear_part:
+        z_p = zero.copy()
+        weight = coef * sense / 2
+        z_p[idx] = True
+        pauli_list.append(SparsePauliOp(Pauli((z_p, zero)), -weight))
+        offset += weight
+
+    quadratic_part = quad_prog.objective.quadratic.to_dict().items()
+    print(quadratic_part)
+    # create Pauli terms
+    for (i, j), coeff in quadratic_part:
+
+        weight = coeff * sense / 4
+        print((i, j), weight)
+        if i == j:
+            offset += weight
+        else:
+            z_p = zero.copy()
+            z_p[i] = True
+            z_p[j] = True
+            pauli_list.append(SparsePauliOp(Pauli((z_p, zero)), weight))
+            print(pauli_list[-1])
+
+        z_p = zero.copy()
+        z_p[i] = True
+        pauli_list.append(SparsePauliOp(Pauli((z_p, zero)), -weight))
+        print(pauli_list[-1])
+
+        z_p = zero.copy()
+        z_p[j] = True
+        pauli_list.append(SparsePauliOp(Pauli((z_p, zero)), -weight))
+        print(pauli_list[-1])
+
+        offset += weight
+
+    if pauli_list:
+        # Remove paulis whose coefficients are zeros.
+        qubit_op = sum(pauli_list).simplify(atol=0)
+    else:
+        # If there is no variable, we set num_nodes=1 so that qubit_op should be an operator.
+        # If num_nodes=0, I^0 = 1 (int).
+        num_vars = max(1, num_vars)
+        qubit_op = SparsePauliOp("I" * num_vars, 0)
+
+    return qubit_op, offset
+
+
+# qubitOp, offset = qubo.to_ising()
+qubitOp, offset = to_ising(qubo)
+# print(qubitOp, offset)
 print(offset)
 print(qubitOp.coeffs)
 print(qubitOp)
 
 exact = MinimumEigenOptimizer(NumPyMinimumEigensolver())
+
+eigen_result = NumPyMinimumEigensolver().compute_minimum_eigenvalue(qubitOp)
+print(eigen_result)
 result = exact.solve(qubo)
 print(result.prettyprint())
