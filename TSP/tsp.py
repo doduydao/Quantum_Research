@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from docplex.mp.model import Model
 import math
 import networkx as nx
