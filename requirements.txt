@@ -1,0 +1,6 @@
+qiskit==0.45.1
+networkx
+matplotlib
+numpy
+docplex==2.25.236
+seaborn
