@@ -137,7 +137,7 @@ def H(tsp, beta, gamma, p_qc) -> QuantumCircuit:
     return qc
 
 
-def minimizer(tsp, p_qc, no_shots):
+def function_minimize(tsp, p_qc, no_shots):
     """
     Objective function of H
 
@@ -164,6 +164,36 @@ def minimizer(tsp, p_qc, no_shots):
     return f
 
 
+def minimizer(angles_objective, p_qc, optim_method, no_iters_optim):
+    """
+    Find best (beta, gamma) angles
+
+    :param angles_objective: minimize function
+    :type angles_objective: function
+    :param p_qc: circuit depth
+    :type p_qc: int
+    :param optim_method: optimization method
+    :type optim_method: string
+    :param no_iters_optim: number of iteration
+    :type no_iters_optim: int
+    :param no_shots: number of samples
+    :type no_shots: int
+    :return: best beta, gamma angle
+    :rtype: list, list
+    """
+    # initial_point = np.zeros(p_qc * 2)
+    initial_point = np.random.rand(p_qc * 2)
+    res_sample = minimize(angles_objective,
+                          initial_point,
+                          method=optim_method,
+                          options={'maxiter': no_iters_optim,
+                                   'disp': True}
+                          )
+    print(res_sample)
+    optimal_theta = res_sample['x']
+    beta = optimal_theta[:p_qc]
+    gamma = optimal_theta[p_qc:]
+    return beta, gamma
 def make_circuit(tsp, p_qc, optim_method, no_iters_optim, no_shots) -> QuantumCircuit:
     """
     Create quantum circuit for Hamiltonian of TSP
@@ -181,27 +211,11 @@ def make_circuit(tsp, p_qc, optim_method, no_iters_optim, no_shots) -> QuantumCi
     :return: quantum circuit
     :rtype: QuantumCircuit
     """
-    angles_objective = minimizer(tsp, p_qc, no_shots)
+    angles_objective = function_minimize(tsp, p_qc, no_shots)
+    beta, gamma = minimizer(angles_objective, p_qc, optim_method, no_iters_optim)
     # theta = numpy.array([2.819630E+00,  -1.148550E-01,  5.240590E-01,   7.516110E-01,   5.030128E-03, 4.223003E-03 ,  8.949918E-03,   2.736550E-01,   4.036071E-04,   1.346727E+00, 1.446576E-01,   1.137636E+00,   8.016028E-02,   6.019606E-01,   2.279614E+00, 1.366261E+00,   1.086591E+00,   6.453142E-01,   7.103665E-01,   2.199607E+00])
     # theta = numpy.array([3.368268E-01, 5.997952E-01, 1.591153E-01, 9.593521E-01, 4.316945E-01, -9.036192E-02, 5.965993E-02, 7.554193E-01, 2.655019E-01, 1.418550E-01,  4.493724E-01, 8.504383E-01, 6.524912E-01, 4.687341E-02, 8.285875E-01,  5.884106E-01, 1.929075E-01, 1.270839E+00, 6.292845E-01, 3.055395E-01,  3.143851E-01, 4.368999E-01, 5.340962E-01, 2.562147E-01, 1.645299E+00,  5.213757E-01, 2.814088E-01, 2.571498E-01, 4.272136E-01, 2.624298E-01])
     # theta = np.random.rand(p_qc * 2)
-    theta = np.zeros(p_qc * 2)
-    res_sample = minimize(angles_objective,
-                          theta,
-                          method=optim_method,
-                          options={'maxiter': no_iters_optim, 'disp': True}
-                          )
-    print(res_sample)
-    # if no_iters_optim == 200:
-    #     optimal_theta = numpy.array(
-    #         [2.819630E+00, -1.148550E-01, 5.240590E-01, 7.516110E-01, 5.030128E-03, 4.223003E-03, 8.949918E-03,
-    #          2.736550E-01, 4.036071E-04, 1.346727E+00, 1.446576E-01, 1.137636E+00, 8.016028E-02, 6.019606E-01,
-    #          2.279614E+00, 1.366261E+00, 1.086591E+00, 6.453142E-01, 7.103665E-01, 2.199607E+00])
-    # else:
-    #     optimal_theta = res_sample['x']
-    optimal_theta = res_sample['x']
-    beta = optimal_theta[:p_qc]
-    gamma = optimal_theta[p_qc:]
     qc = H(tsp, beta, gamma, p_qc)
     return qc
 
@@ -352,10 +366,10 @@ if __name__ == '__main__':
     # edge_with_weights = [(0, 1, 48), (0, 2, 91), (1, 2, 63)]
     # A = max([i[2] for i in edge_with_weights])**2
     # B = A
-    A = 1000
-    B = 1000
+    A = 10000
+    B = 10000
     no_shots = 2048
-    p_qc = 20
+    p_qc = 10
     no_iters_optim = 500
     optim_method = 'cobyla'
 
