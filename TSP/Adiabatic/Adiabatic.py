@@ -34,15 +34,15 @@ def H(tsp, T, no_shots, show_iter=False):
     if show_iter:
         start = 0
         end = T+1
-        step = 1
+        step = 50
     else:
         start = T
         end = T+1
         step = 1
 
 
-    for i in range(start, end, step):
-        print('iter:', i, 'delta_t:', delta_t)
+    for iter in range(start, end, step):
+        print('iter:', iter, 'delta_t:', delta_t)
         t = 1
         qreg_q = None
         creg_c = None
@@ -53,7 +53,7 @@ def H(tsp, T, no_shots, show_iter=False):
         qc.reset(qreg_q)
         qc.h(qreg_q)  # Apply Hadamard gate
         qc.barrier()
-        for _ in range(i):
+        for _ in range(iter):
             qc.rx(-2 * t, qreg_q)
             for h in H_z_p:
                 w = h[0] / H_z
@@ -128,8 +128,8 @@ if __name__ == '__main__':
     A = 10
     B = 10
     no_shots = 2048
-    T = 1000
+    T = 700
 
     tsp = TSP(edge_with_weights, A=A, B=B, node_size=500, show_graph=False, save_graph=True)
-    run(tsp, T, no_shots, show_iter=True)
+    run(tsp, T, no_shots, show_iter=False)
 
