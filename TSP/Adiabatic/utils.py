@@ -16,6 +16,7 @@ def evaluate_H(fx, solutions) -> float:
     energy = 0
     for state, count in solutions.items():
         cost = calculate_cost(fx, state)
+        # print(state, count, cost)
         energy += cost * count
     total = sum(list(solutions.values()))
     return energy / total
@@ -26,8 +27,11 @@ def compare_cost_by_iter(solution_iters, fx):
     energys = []
     for i in range(len(solution_iters)):
         states = solution_iters[i]
+
+        states = {i[0]:i[1] for i in sorted(states.items(), key=lambda item: item[1], reverse=True)}
+
         energy = round(evaluate_H(fx, states),2)
-        print("iter:", i, 'energy:', energy)
+        print("iter:", i, 'energy:', energy, 'states:', states)
         energys.append(energy)
         info.append([i, energy, states])
 
