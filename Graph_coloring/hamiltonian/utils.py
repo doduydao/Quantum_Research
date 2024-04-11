@@ -14,23 +14,35 @@ def evaluate_H(fx, solutions) -> float:
     :rtype: float
     """
     energy = 0
-    for state, count in solutions.items():
+    total = 0
+    for state, value in solutions.items():
         cost = calculate_cost(fx, state)
         # print(state, count, cost)
-        energy += cost * count
-    total = sum(list(solutions.values()))
+        energy += cost * value[1]
+        total += value[1]
     return energy / total
 
+def count_color(state, n):
+    colors = set()
+    step = int(len(state) / n)
+    for i in range(0, len(state), step):
+        colors.add(state[i:i + step])
+    return len(colors)
 
-def compare_cost_by_iter(solution_iters, fx):
+def compare_cost_by_iter(solution_iters, fx, no_nodes):
     info = []
     energys = []
     for i in range(len(solution_iters)):
         states = solution_iters[i]
+        new_states = dict()
+        for state, shot in states.items():
+            no_color = count_color(state, no_nodes)
+            new_states[state] = [no_color, shot]
 
-        states = {i[0]:i[1] for i in sorted(states.items(), key=lambda item: item[1], reverse=True)}
+        states = {i[0]:i[1] for i in sorted(new_states.items(), key=lambda item: item[1][1], reverse=True)}
 
         energy = round(evaluate_H(fx, states),2)
+
         print("iter:", i, 'energy:', energy, 'states:', states)
         energys.append(energy)
         info.append([i, energy, states])

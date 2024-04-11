@@ -100,13 +100,15 @@ def run(gcp, T, no_shots, show_result_of_iter_optim, show_iter):
     states = H(gcp, T, no_shots, show_iter)
     fx = gcp.get_pair_coeff_var()
 
-    results = compare_cost_by_iter(states, fx)
+    results = compare_cost_by_iter(states, fx, no_nodes=len(gcp.nodes))
     solutions = results[-1]
+    states =  dict()
     redundants = []
 
     for k, v in solutions.items():
-        if v == 0:
+        if v[1] == 0:
             redundants.append(k)
+        states[k] = v[1]
     for k in redundants:
         del solutions[k]
 
@@ -116,10 +118,8 @@ def run(gcp, T, no_shots, show_result_of_iter_optim, show_iter):
         print("best_iter: %.d, estimate_average_cost: %.2f" % (T, results[1]))
         print(solutions)
 
-
-
-    fig_counted = plot_histogram(solutions, title="Qasm Distribution", figsize=(10, 5))
-    fig_proba = plot_distribution(solutions, title="Qasm Distribution", figsize=(10, 5))
+    fig_counted = plot_histogram(states, title="Qasm Distribution", figsize=(10, 5))
+    fig_proba = plot_distribution(states, title="Qasm Distribution", figsize=(10, 5))
     fig_counted.savefig('histogram_optimal.png', bbox_inches='tight')
     fig_proba.savefig('distribution_optimal.png', bbox_inches='tight')
 
@@ -149,6 +149,6 @@ if __name__ == '__main__':
     K = 3
     A = 100
     no_shots = 2048
-    T = 500
+    T = 100
     gcp = Graph_Coloring(edges,K=K, A=A, node_size=500, show_graph=False, save_graph=True)
     run(gcp, T, no_shots, show_result_of_iter_optim=True, show_iter=False)
