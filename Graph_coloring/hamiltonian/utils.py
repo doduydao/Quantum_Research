@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from tsp import calculate_cost
+from .graph_coloring import calculate_cost
 
 
 def evaluate_H(fx, solutions) -> float:
@@ -49,3 +49,6 @@ def compare_cost_by_iter(solution_iters, fx):
     # plt.show()
     best_result = sorted(info, key=lambda item: item[1])[0]
     return best_result
+
+def inversion_affichage(counts) -> dict:
+    return {k[::-1]: v for k, v in counts.items()}
