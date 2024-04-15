@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 from docplex.mp.model import Model
 import math
@@ -15,6 +14,7 @@ class Graph_Coloring_Model:
                  A: float | int,
                  model_name: str = "TSP_model"):
         self.model = Model(name=model_name)
+        self.model.float_precision = len(str(A).replace('.', ''))
         self.edges = edges
         self.nodes = self.get_nodes()
         self.K = K
@@ -35,6 +35,7 @@ class Graph_Coloring_Model:
 
     @property
     def x_variable(self) -> Model:
+
         no_nodes = len(self.nodes)
         return self.model.continuous_var_dict([(i, k) for k in range(self.K) for i in range(no_nodes)], name="x")
 
@@ -48,11 +49,12 @@ class Graph_Coloring_Model:
         hamiltonian_cost_dist = 0
         for k in range(self.K):
             cost_dist += self.model.sum(
-                self.x[i, k] * self.x[j, k]
+                2 * self.x[i, k] * self.x[j, k]
                 for i, j in self.edges
+
             )
             hamiltonian_cost_dist += self.model.sum(
-                    (1 - self.Z[i, k]) * (1 - self.Z[j, k]) / 4
+                    (1 - self.Z[i, k]) * (1 - self.Z[j, k]) / 2
                     for i, j in self.edges
                 )
         return cost_dist, hamiltonian_cost_dist
@@ -62,9 +64,8 @@ class Graph_Coloring_Model:
         Hamiltonian_penalty_cost = 0
 
         for i in self.nodes:
-            a = (1 - self.model.sum(self.x[i, k] for k in range(self.K)))**2
-
-            penalty_cost += a
+            a = self.model.sum(self.x[i, k] for k in range(self.K))
+            penalty_cost += (1-a)**2
 
             b = self.model.sum((1 - self.Z[i, k]) / 2 for k in range(self.K))
             Hamiltonian_penalty_cost += (1-b)**2
@@ -293,17 +294,6 @@ def generate_binary_string(length, current_string=""):
             generate_binary_string(length - 1, current_string + "1")
 
 
-def calculate_cost(fx, solution):
-    xs = [int(char) for char in solution]
-    cost = 0
-    for e in fx[:-1]:
-        w = e[0]
-        x_ip = xs[e[1][0]]
-        for i in range(1, len(e[1])):
-            x_ip *= xs[e[1][i]]
-        cost += w * x_ip
-    cost += fx[-1]
-    return cost
 
 
 def filter_solution(counts, total, threshold=1e-6):
@@ -315,15 +305,6 @@ def filter_solution(counts, total, threshold=1e-6):
     # solutions = {i[0]: i[1] for i in sorted_by_value}
     return solutions
 
-
-def find_best_solution(solutions, fx):
-    best_solution = []
-    max_value = max(solutions.values())
-    for k, v in solutions.items():
-        if v == max_value:
-            cost = calculate_cost(fx, k)
-            best_solution.append([k, v, cost])
-    return best_solution
 
 
 def make_order(solutions):
@@ -345,6 +326,7 @@ def make_order(solutions):
 def prettyprint(cost_function: Model):
     str_cost = cost_function.repr_str().replace("+-", "-").replace("-", "+-")
     elements = str_cost.split("+")
+    print(elements)
     while "" in elements:
         elements.remove("")
     f = ""
@@ -361,12 +343,12 @@ if __name__ == '__main__':
     tsp = Graph_Coloring(edges, K, A)
     # print(tsp.weight)
 
-    print("tsp.cost_dist[0]:")
+    # print("tsp.cost_dist[0]:")
     # print(tsp.cost_dist[0])
-    prettyprint(tsp.cost_dist[0])
-    print("tsp.cost_penalty[0]:")
+    # prettyprint(tsp.cost_dist[0])
+    # print("tsp.cost_penalty[0]:")
     # print(tsp.cost_penalty[0])
-    prettyprint(tsp.cost_penalty[0])
+    # prettyprint(tsp.cost_penalty[0])
     # print(tsp.cost_penalty_2[0])
     print("Cost function:")
     print(tsp.cost_function)

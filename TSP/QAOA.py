@@ -2,14 +2,12 @@ from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from qiskit import Aer, execute
 from qiskit.visualization import plot_histogram, plot_distribution
 from scipy.optimize import minimize
+import matplotlib.pyplot as plt
 from hamiltonian import *
 import pandas as pd
 
+
 backend = Aer.get_backend('qasm_simulator')
-def inversion_affichage(counts) -> dict:
-    return {k[::-1]: v for k, v in counts.items()}
-
-
 def H_P(qreg_q, gamma, H_z_p, H_z) -> QuantumCircuit:
     """
     Create H_P part of Hamiltonian
@@ -81,7 +79,7 @@ def calculate_cost(fx, state) -> float:
     return cost
 
 
-def evaluate_H(fx, solutions, P, C) -> float:
+def evaluate_H(fx, solutions) -> float:
     """
     Estimate the cost of solutions, that are made by H
 
@@ -94,22 +92,18 @@ def evaluate_H(fx, solutions, P, C) -> float:
     """
     energy = 0
     for state, count in solutions.items():
-        no_conflict = calculate_no_conflict(state, len(gcp.nodes), gcp.edges)
-        no_colors = count_color(state, len(gcp.nodes))
-        cost = P * penalty_part(state, len(gcp.nodes)) + no_conflict * C + no_colors
-        # cost = calculate_cost(fx, state)
-        # print(state, cost)
+        cost = calculate_cost(fx, state)
         energy += cost * count
     total = sum(list(solutions.values()))
     return energy / total
 
 
-def H(gcp, beta, gamma, p_qc) -> QuantumCircuit:
+def H(tsp, beta, gamma, p_qc) -> QuantumCircuit:
     """
-    Create quantum circuit of Hamiltonian by H_P, which is created in GCP object.
+    Create quantum circuit of Hamiltonian by H_P, which is created in TSP object.
 
-    :param gcp: GCP object
-    :type gcp: GCP Object
+    :param tsp: TSP object
+    :type tsp: TSP Object
     :param beta: angles beta
     :type beta: list
     :param gamma: angles gamma
@@ -119,13 +113,13 @@ def H(gcp, beta, gamma, p_qc) -> QuantumCircuit:
     :return: quantum circuit
     :rtype: QuantumCircuit()
     """
-    no_qubits = len(gcp.nodes) * gcp.K
+    no_qubits = (len(tsp.weights) - 1) ** 2
     qreg_q = QuantumRegister(no_qubits, 'q')
     creg_c = ClassicalRegister(no_qubits, 'c')
     qc = QuantumCircuit(qreg_q, creg_c)
     qc.h(qreg_q)  # Apply Hadamard gate
     qc.barrier()
-    H_z_p, H_z = gcp.get_pair_coeff_gate()
+    H_z_p, H_z = tsp.get_pair_coeff_gate()
 
     for i in range(p_qc):
         h_p = H_P(qreg_q, gamma[i], H_z_p, H_z)
@@ -138,29 +132,29 @@ def H(gcp, beta, gamma, p_qc) -> QuantumCircuit:
     return qc
 
 
-def function_minimize(gcp, p_qc, no_shots, P, C):
+def function_minimize(tsp, p_qc, no_shots):
     """
     Objective function of H
 
-    :param gcp: GCP object
-    :type gcp: GCP Object
+    :param tsp: TSP object
+    :type tsp: TSP Object
     :param p_qc: circuit depth
     :type p_qc: int
     :return:
     :rtype: function
     """
     quantum_simulator = Aer.get_backend("qasm_simulator")
-    fx = gcp.get_pair_coeff_var()
+    fx = tsp.get_pair_coeff_var()
 
     def f(theta):
         beta = theta[:p_qc]
         gamma = theta[p_qc:]
-        qc = H(gcp, beta, gamma, p_qc)
+        qc = H(tsp, beta, gamma, p_qc)
         job = execute(qc, quantum_simulator, seed_simulator=10, shots=no_shots)
         result = job.result()
         counts = result.get_counts()
         counts = inversion_affichage(counts)  # Reverse qubit order
-        return evaluate_H(fx, counts, P, C)
+        return evaluate_H(fx, counts)
 
     return f
 
@@ -195,6 +189,30 @@ def minimizer(angles_objective, p_qc, optim_method, no_iters_optim):
     beta = optimal_theta[:p_qc]
     gamma = optimal_theta[p_qc:]
     return beta, gamma
+def make_circuit(tsp, p_qc, optim_method, no_iters_optim, no_shots) -> QuantumCircuit:
+    """
+    Create quantum circuit for Hamiltonian of TSP
+
+    :param tsp: TSP object
+    :type tsp: TSP Object
+    :param p_qc: circuit depth
+    :type p_qc: int
+    :param optim_method: optimization method
+    :type optim_method: string
+    :param no_iters_optim: number of iteration
+    :type no_iters_optim: int
+    :param no_shots: number of samples
+    :type no_shots: int
+    :return: quantum circuit
+    :rtype: QuantumCircuit
+    """
+    angles_objective = function_minimize(tsp, p_qc, no_shots)
+    beta, gamma = minimizer(angles_objective, p_qc, optim_method, no_iters_optim)
+    # theta = numpy.array([2.819630E+00,  -1.148550E-01,  5.240590E-01,   7.516110E-01,   5.030128E-03, 4.223003E-03 ,  8.949918E-03,   2.736550E-01,   4.036071E-04,   1.346727E+00, 1.446576E-01,   1.137636E+00,   8.016028E-02,   6.019606E-01,   2.279614E+00, 1.366261E+00,   1.086591E+00,   6.453142E-01,   7.103665E-01,   2.199607E+00])
+    # theta = numpy.array([3.368268E-01, 5.997952E-01, 1.591153E-01, 9.593521E-01, 4.316945E-01, -9.036192E-02, 5.965993E-02, 7.554193E-01, 2.655019E-01, 1.418550E-01,  4.493724E-01, 8.504383E-01, 6.524912E-01, 4.687341E-02, 8.285875E-01,  5.884106E-01, 1.929075E-01, 1.270839E+00, 6.292845E-01, 3.055395E-01,  3.143851E-01, 4.368999E-01, 5.340962E-01, 2.562147E-01, 1.645299E+00,  5.213757E-01, 2.814088E-01, 2.571498E-01, 4.272136E-01, 2.624298E-01])
+    # theta = np.random.rand(p_qc * 2)
+    qc = H(tsp, beta, gamma, p_qc)
+    return qc
 
 def find_solution(circuit, no_shots, bit_strings):
     """
@@ -216,32 +234,31 @@ def find_solution(circuit, no_shots, bit_strings):
             solutions[state] = 0
     return solutions
 
-
-def run(gcp, p_qc, optim_method, no_shots, no_iters_optim, show_iter, P, C):
-    no_qubits = len(gcp.nodes) * gcp.K
+def run(tsp, p_qc, optim_method, no_shots, no_iters_optim, show_iter):
+    no_qubits = (len(tsp.weights)-1) ** 2
     bit_strings = generate_binary_string(no_qubits)
 
     states = []
 
     if show_iter:
         start = 1
-        end = no_iters_optim+1
-        step = no_iters_optim-1
+        end = no_iters_optim + 1
+        step = no_iters_optim - 1
     else:
         start = no_iters_optim
-        end = no_iters_optim+1
+        end = no_iters_optim + 1
         step = 1
 
     for no_iters in range(start, end, step):
         print('no_iters:', no_iters)
-        angles_objective = function_minimize(gcp, p_qc, no_shots, P, C)
+        angles_objective = function_minimize(tsp, p_qc, no_shots)
         beta, gamma = minimizer(angles_objective, p_qc, optim_method, no_iters)
-        qc = H(gcp, beta, gamma, p_qc)
+        qc = H(tsp, beta, gamma, p_qc)
         solutions = find_solution(qc, no_shots, bit_strings)
         states.append([no_iters, solutions])
 
-    fx = gcp.get_pair_coeff_var()
-    results = compare_cost_by_iter(states, fx, len(gcp.nodes), gcp.edges, P, C)
+    fx = tsp.get_pair_coeff_var()
+    results = compare_cost_by_iter(states, fx)
 
     solutions = states[-1][1]
     redundants = []
@@ -257,27 +274,9 @@ def run(gcp, p_qc, optim_method, no_shots, no_iters_optim, show_iter, P, C):
     fig_counted.savefig('QAOA/histogram_optimal.png', bbox_inches='tight')
     fig_proba.savefig('QAOA/distribution_optimal.png', bbox_inches='tight')
 
-    distribution = dict()
-    for state, shot in solutions.items():
-        no_conflict = calculate_no_conflict(state, len(gcp.nodes), gcp.edges)
-        no_colors = count_color(state, len(gcp.nodes))
-        cost_by_state = P * penalty_part(state, len(gcp.nodes)) + no_conflict * C + no_colors
-        prob = shot / no_shots * 100
-        distribution[state] = [cost_by_state, prob]
-        # print('state:', state, 'cost:', cost_by_state, 'prob', prob)
-
-    distribution = {i[0]: i[1] for i in sorted(distribution.items(), key=lambda x: x[1][1], reverse=True)}
-    # solutions = solutions
-    for k, v in distribution.items():
-        print(k, v)
-
-
     return results
-
-
 def create_chart(results, is_export_data=True):
     # results = [[iter, energy, distribution_no_colors, distribution_cost],..]
-    data_distribution_no_color = dict()
     data_distribution_cost = dict()
     data_average_cost = dict()
     average_costs = []
@@ -287,58 +286,27 @@ def create_chart(results, is_export_data=True):
         iters.append(iter)
         average_cost = result_iter[1]
         average_costs.append(average_cost)
-        distribution_no_colors = result_iter[2]
-        data_distribution_no_color['no_colors'] = list(distribution_no_colors.keys())
-        data_distribution_no_color["iter "+str(iter)] = list(distribution_no_colors.values())
-
-        distribution_cost = result_iter[3]
+        distribution_cost = result_iter[2]
         data_distribution_cost['cost'] = list(distribution_cost.keys())
         data_distribution_cost["iter "+str(iter)] = list(distribution_cost.values())
 
     data_average_cost['iters'] = iters
     data_average_cost['average_costs'] = average_costs
 
-    cumulative_distribution_no_color = calculate_cumulative_prob(data_distribution_no_color)
     cumulative_distribution_cost = calculate_cumulative_prob(data_distribution_cost)
 
     if is_export_data:
-        df = pd.DataFrame.from_dict(data_distribution_no_color)
-        df.to_csv('QAOA/result_distribution_no_color.csv', index=False, sep='\t')
-        print("QAOA/result_distribution_no_color.csv file created successfully!")
-
         df = pd.DataFrame.from_dict(data_distribution_cost)
         df.to_csv('QAOA/result_distribution_cost.csv', index=False, sep='\t')
-        print("QAOA/result_distribution_cost.csv file created successfully!")
-
-        df = pd.DataFrame.from_dict(cumulative_distribution_no_color)
-        df.to_csv('QAOA/result_cumulative_distribution_no_color.csv', index=False, sep='\t')
-        print("QAOA/result_cumulative_distribution_no_color.csv file created successfully!")
+        print("Adiabatic/result_distribution_cost.csv file created successfully!")
 
         df = pd.DataFrame.from_dict(cumulative_distribution_cost)
-        df.to_csv('QAOA/result_cumulative_distribution_cost.csv', index=False, sep='\t')
+        df.to_csv('Adiabatic/result_cumulative_distribution_cost.csv', index=False, sep='\t')
         print("QAOA/result_cumulative_distribution_cost.csv file created successfully!")
 
         df = pd.DataFrame.from_dict(data_average_cost)
         df.to_csv('QAOA/result_average_cost.csv', index=False, sep='\t')
         print("QAOA/result_average_cost.csv file created successfully!")
-
-    plt.clf()
-    plt.figure(figsize=(8, 6))# Set chart size
-    keys = list(data_distribution_no_color.keys())[1:]
-    df = pd.DataFrame(data_distribution_no_color)
-    begin = keys[0]
-    final = keys[1]
-    plt.plot(df['no_colors'], df[begin], label='Begin', marker='o', linestyle='-')
-    plt.plot(df['no_colors'], df[final], label='Final', marker='s', linestyle='--')
-    plt.title('Probability of colors')
-    plt.xlabel('Colors')
-    plt.ylabel('Probability')
-    plt.xticks(df['no_colors'],rotation=45)  # Rotate x-axis labels for better readability
-    plt.tight_layout()  # Adjust spacing for labels
-    plt.legend()
-    plt.grid(True)
-    # plt.show()
-    plt.savefig('QAOA/Probability of colors.PNG')
 
     plt.clf()
     plt.figure(figsize=(8, 6))  # Set chart size
@@ -361,24 +329,6 @@ def create_chart(results, is_export_data=True):
     # cummulative proba
     plt.clf()
     plt.figure(figsize=(8, 6))  # Set chart size
-    keys = list(cumulative_distribution_no_color.keys())[1:]
-    df = pd.DataFrame(cumulative_distribution_no_color)
-    begin = keys[0]
-    final = keys[1]
-    plt.plot(df['no_colors'], df[begin], label='Begin', marker='o', linestyle='-')
-    plt.plot(df['no_colors'], df[final], label='Final', marker='s', linestyle='--')
-    plt.title('Cumulative probability of colors')
-    plt.xlabel('Colors')
-    plt.ylabel('Cumulative probability')
-    plt.xticks(df['no_colors'],rotation=45)  # Rotate x-axis labels for better readability
-    plt.tight_layout()  # Adjust spacing for labels
-    plt.legend()
-    plt.grid(True)
-    # plt.show()
-    plt.savefig('QAOA/Cumulative probability of colors.PNG')
-
-    plt.clf()
-    plt.figure(figsize=(8, 6))  # Set chart size
     keys = list(cumulative_distribution_cost.keys())[1:]
     df = pd.DataFrame(cumulative_distribution_cost)
     begin = keys[0]
@@ -398,19 +348,14 @@ def create_chart(results, is_export_data=True):
 
 if __name__ == '__main__':
     # make a graph
-    edges = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3)]
-    K = 3
+    edge_with_weights = [(0, 1, 1), (0, 2, 1.41), (0, 3, 2.23), (1, 2, 1), (1, 3, 1.41), (2, 3, 1)]
     A = 1000
-    P = A
-    C = 100
-    gcp = Graph_Coloring(edges, K=K, A=A, node_size=500, show_graph=False, save_graph=False)
-    
+    B = 1000
+    tsp = TSP(edge_with_weights, A=A, B=B, node_size=500, show_graph=False, save_graph=True)
     no_shots = 2048
-    p_qc = 10
+    p_qc = 15
     no_iters_optim = 500
     optim_method = 'cobyla'
-
-    results = run(gcp, p_qc, optim_method, no_shots, no_iters_optim, show_iter=True, P=P, C=C)
+    results = run(tsp, p_qc, optim_method, no_shots, no_iters_optim, show_iter=True)
     create_chart(results, is_export_data=True)
-
 

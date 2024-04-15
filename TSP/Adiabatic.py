@@ -1,28 +1,28 @@
 from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
 from qiskit import Aer, execute
 from qiskit.visualization import plot_histogram, plot_distribution
-import matplotlib.pyplot as plt
 from hamiltonian import *
 import pandas as pd
 
+
 backend = Aer.get_backend('qasm_simulator')
 
-
-def H(gcp, T, no_shots, show_iter=False):
+def H(tsp, T, no_shots, show_iter=False):
     """
-    Create quantum circuit of Hamiltonian by H_P, which is created in gcp object.
+    Create quantum circuit of Hamiltonian by H_P, which is created in TSP object.
 
-    :param gcp: cp object
-    :type gcp: gcp Object
+    :param tsp: TSP object
+    :type tsp: TSP Object
     :param T: number of iterations
     :type T: int
     :return: quantum circuit
     :rtype:
     """
-    H_z_p, H_z = gcp.get_pair_coeff_gate()
+    H_z_p, H_z = tsp.get_pair_coeff_gate()
 
-    no_qubits = len(gcp.nodes) * gcp.K
+    no_qubits = (len(tsp.weights) - 1) ** 2
     bit_strings = generate_binary_string(no_qubits)
+
 
     delta_t = 1 / T
     num_str = str(delta_t)
@@ -33,11 +33,11 @@ def H(gcp, T, no_shots, show_iter=False):
 
     if show_iter:
         start = 1
-        end = T+1
-        step = T-1
+        end = T + 1
+        step = T - 1
     else:
         start = T
-        end = T+1
+        end = T + 1
         step = 1
 
     for iter in range(start, end, step):
@@ -58,12 +58,12 @@ def H(gcp, T, no_shots, show_iter=False):
                 w = h[0] / H_z
                 idx = h[1]
                 if len(idx) == 1:
-                    qc.rz(2 * (1-t) * w, qreg_q[idx[0]])
+                    qc.rz(2 * (1 - t) * w, qreg_q[idx[0]])
                 else:
                     i = idx[0]
                     j = idx[1]
                     qc.cx(qreg_q[i], qreg_q[j])
-                    qc.rz(2 * (1-t) * w, qreg_q[j])
+                    qc.rz(2 * (1 - t) * w, qreg_q[j])
                     qc.cx(qreg_q[i], qreg_q[j])
             t = round(t - delta_t, num_decimals)
         qc.measure(qreg_q, creg_c)
@@ -95,12 +95,13 @@ def find_solution(circuit, no_shots, bit_strings):
 
 
 
-def run(gcp, T, no_shots, show_iter, P, C):
-    states = H(gcp, T, no_shots, show_iter)
-    fx = gcp.get_pair_coeff_var()
+def run(tsp, T, no_shots, show_iter):
+    states = H(tsp, T, no_shots, show_iter)
+    fx = tsp.get_pair_coeff_var()
 
-    results = compare_cost_by_iter(states, fx, len(gcp.nodes), gcp.edges, P, C)
-    solutions = states[-1][-1]
+    results = compare_cost_by_iter(states, fx)
+
+    solutions = states[-1][1]
     redundants = []
 
     for k, v in solutions.items():
@@ -114,29 +115,10 @@ def run(gcp, T, no_shots, show_iter, P, C):
     fig_counted.savefig('Adiabatic/histogram_optimal.png', bbox_inches='tight')
     fig_proba.savefig('Adiabatic/distribution_optimal.png', bbox_inches='tight')
 
-
-    # tmp = {i[0]:i[1] for i in sorted(states[-1][-1].items(), key = lambda x: x[1], reverse=True)}
-    # len(gcp.nodes), gcp.A, gcp.edges
-    distribution = dict()
-    for state, shot in solutions.items():
-        no_conflict = calculate_no_conflict(state, len(gcp.nodes), gcp.edges)
-        no_colors = count_color(state, len(gcp.nodes))
-        cost_by_state = P * penalty_part(state, len(gcp.nodes)) + C * no_conflict + no_colors
-        prob = shot / no_shots * 100
-        distribution[state] = [cost_by_state, prob]
-        # print('state:',state, 'cost:', cost_by_state, 'prob', prob)
-
-    distribution = {i[0]:i[1] for i in sorted(distribution.items(), key = lambda x: x[1][1], reverse=True)}
-    # solutions = solutions
-    for k, v in distribution.items():
-        print(k, v)
-
     return results
-
 
 def create_chart(results, is_export_data=True):
     # results = [[iter, energy, distribution_no_colors, distribution_cost],..]
-    data_distribution_no_color = dict()
     data_distribution_cost = dict()
     data_average_cost = dict()
     average_costs = []
@@ -146,32 +128,20 @@ def create_chart(results, is_export_data=True):
         iters.append(iter)
         average_cost = result_iter[1]
         average_costs.append(average_cost)
-        distribution_no_colors = result_iter[2]
-        data_distribution_no_color['no_colors'] = list(distribution_no_colors.keys())
-        data_distribution_no_color["iter "+str(iter)] = list(distribution_no_colors.values())
 
-        distribution_cost = result_iter[3]
+        distribution_cost = result_iter[2]
         data_distribution_cost['cost'] = list(distribution_cost.keys())
         data_distribution_cost["iter "+str(iter)] = list(distribution_cost.values())
 
     data_average_cost['iters'] = iters
     data_average_cost['average_costs'] = average_costs
 
-    cumulative_distribution_no_color = calculate_cumulative_prob(data_distribution_no_color)
     cumulative_distribution_cost = calculate_cumulative_prob(data_distribution_cost)
 
     if is_export_data:
-        df = pd.DataFrame.from_dict(data_distribution_no_color)
-        df.to_csv('Adiabatic/result_distribution_no_color.csv', index=False, sep='\t')
-        print("Adiabatic/result_distribution_no_color.csv file created successfully!")
-
         df = pd.DataFrame.from_dict(data_distribution_cost)
         df.to_csv('Adiabatic/result_distribution_cost.csv', index=False, sep='\t')
         print("Adiabatic/result_distribution_cost.csv file created successfully!")
-
-        df = pd.DataFrame.from_dict(cumulative_distribution_no_color)
-        df.to_csv('Adiabatic/result_cumulative_distribution_no_color.csv', index=False, sep='\t')
-        print("Adiabatic/result_cumulative_distribution_no_color.csv file created successfully!")
 
         df = pd.DataFrame.from_dict(cumulative_distribution_cost)
         df.to_csv('Adiabatic/result_cumulative_distribution_cost.csv', index=False, sep='\t')
@@ -180,24 +150,6 @@ def create_chart(results, is_export_data=True):
         df = pd.DataFrame.from_dict(data_average_cost)
         df.to_csv('Adiabatic/result_average_cost.csv', index=False, sep='\t')
         print("Adiabatic/result_average_cost.csv file created successfully!")
-
-    plt.clf()
-    plt.figure(figsize=(8, 6))# Set chart size
-    keys = list(data_distribution_no_color.keys())[1:]
-    df = pd.DataFrame(data_distribution_no_color)
-    begin = keys[0]
-    final = keys[1]
-    plt.plot(df['no_colors'], df[begin], label='Begin', marker='o', linestyle='-')
-    plt.plot(df['no_colors'], df[final], label='Final', marker='s', linestyle='--')
-    plt.title('Probability of colors')
-    plt.xlabel('Colors')
-    plt.ylabel('Probability')
-    plt.xticks(df['no_colors'],rotation=45)  # Rotate x-axis labels for better readability
-    plt.tight_layout()  # Adjust spacing for labels
-    plt.legend()
-    plt.grid(True)
-    # plt.show()
-    plt.savefig('Adiabatic/Probability of colors.PNG')
 
     plt.clf()
     plt.figure(figsize=(8, 6))  # Set chart size
@@ -220,24 +172,6 @@ def create_chart(results, is_export_data=True):
     # cummulative proba
     plt.clf()
     plt.figure(figsize=(8, 6))  # Set chart size
-    keys = list(cumulative_distribution_no_color.keys())[1:]
-    df = pd.DataFrame(cumulative_distribution_no_color)
-    begin = keys[0]
-    final = keys[1]
-    plt.plot(df['no_colors'], df[begin], label='Begin', marker='o', linestyle='-')
-    plt.plot(df['no_colors'], df[final], label='Final', marker='s', linestyle='--')
-    plt.title('Cumulative probability of colors')
-    plt.xlabel('Colors')
-    plt.ylabel('Cumulative probability')
-    plt.xticks(df['no_colors'],rotation=45)  # Rotate x-axis labels for better readability
-    plt.tight_layout()  # Adjust spacing for labels
-    plt.legend()
-    plt.grid(True)
-    # plt.show()
-    plt.savefig('Adiabatic/Cumulative probability of colors.PNG')
-
-    plt.clf()
-    plt.figure(figsize=(8, 6))  # Set chart size
     keys = list(cumulative_distribution_cost.keys())[1:]
     df = pd.DataFrame(cumulative_distribution_cost)
     begin = keys[0]
@@ -255,18 +189,15 @@ def create_chart(results, is_export_data=True):
     plt.savefig('Adiabatic/Cumulative probability of cost.PNG')
 
 
-
 if __name__ == '__main__':
     # make a graph
-    edges = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3)]
-    K = 3
+    edge_with_weights = [(0, 1, 1), (0, 2, 1.41), (0, 3, 2.23), (1, 2, 1), (1, 3, 1.41), (2, 3, 1)]
     A = 1000
-    P = A
-    C = 1000
+    B = 1000
     no_shots = 2048
-    T = 100
+    T = 500
 
-
-    gcp = Graph_Coloring(edges,K=K, A=A, node_size=500, show_graph=False, save_graph=True)
-    results = run(gcp, T, no_shots, show_iter=True, P=P, C=C)
+    tsp = TSP(edge_with_weights, A=A, B=B, node_size=500, show_graph=False, save_graph=False)
+    results = run(tsp, T, no_shots, show_iter=True)
     create_chart(results, is_export_data=True)
+

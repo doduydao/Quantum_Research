@@ -384,7 +384,8 @@ def find_best_solution(solutions, fx):
             best_solution.append([k, v, cost])
     return best_solution
 
-
+def inversion_affichage(counts) -> dict:
+    return {k[::-1]: v for k, v in counts.items()}
 def make_order(solutions):
     orders = []
     for solution in solutions:
