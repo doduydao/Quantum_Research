@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+
 def calculate_no_conflict(state, n, edges):
     colors = list()
     step = int(len(state) / n)
@@ -85,8 +88,6 @@ def penalty_part(state, n):
 
 
 def compare_cost_by_iter(solution_iters, fx, no_nodes, egdes, P, C):
-    # print(fx)
-
     info = []
     for i in range(len(solution_iters)):
         states = solution_iters[i]
@@ -95,20 +96,17 @@ def compare_cost_by_iter(solution_iters, fx, no_nodes, egdes, P, C):
         distribution_no_colors = dict()
         distribution_cost = dict()
         no_shots = sum(list(states.values()))
-        energy = 0
+        # energy = 0
+        print("iter:", iter)
+        print("states:", states)
+        print()
+
         for state, shot in states.items():
             no_conflict = calculate_no_conflict(state, no_nodes, egdes)
-            # cost_by_state_2 = calculate_cost(fx, state)
-
             no_colors = count_color(state, no_nodes)
-
             cost_by_state = P * penalty_part(state, no_nodes) + C * no_conflict + no_colors
-            # penatly_part =
-
             prob = shot / no_shots * 100
-            # print("state:", state, cost_by_state, no_conflict, prob)
-
-            energy += cost_by_state * prob
+            # energy += cost_by_state * prob
 
             if no_colors not in distribution_no_colors:
                 distribution_no_colors[no_colors] = prob
@@ -118,17 +116,15 @@ def compare_cost_by_iter(solution_iters, fx, no_nodes, egdes, P, C):
                 distribution_cost[cost_by_state] = prob
             else:
                 distribution_cost[cost_by_state] += prob
-
-        file = open("finql_distribution.txt", "w")
-        for k, v in distribution_cost.items():
-            line = str(k) + "\t" + str(v)+"\n"
-            file.write(line)
-        file.close()
-        continue
         distribution_no_colors = {i[0]: round(i[1],2) for i in sorted(distribution_no_colors.items(), key=lambda item: item[0])}
         distribution_cost = {i[0]: round(i[1],2) for i in sorted(distribution_cost.items(), key=lambda item: item[0])}
-        info.append([iter, round(energy, 2), distribution_no_colors, distribution_cost])
-    # info = sorted(info, key=lambda item: item[1])
+
+        file_name = "iter_"+str(iter)+".txt"
+        with open(file_name, 'w') as file:
+            for k, v in distribution_cost.items():
+                line = str(k) + "\t" + str(v)+"\n"
+                file.write(line)
+        info.append([iter, distribution_no_colors, distribution_cost])
     return info
 
 def inversion_affichage(counts) -> dict:
@@ -170,4 +166,118 @@ def is_solution(state, K, n):
             return False
     return True
     # return False
+
+
+
+
+def create_chart(results, is_export_data=True):
+    # results = [[iter, energy, distribution_no_colors, distribution_cost],..]
+    data_distribution_no_color = dict()
+    data_distribution_cost = dict()
+    average_costs = []
+    iters = []
+    for result_iter in results:
+        iter = result_iter[0]
+        iters.append(iter)
+        distribution_no_colors = result_iter[1]
+        data_distribution_no_color['no_colors'] = list(distribution_no_colors.keys())
+        data_distribution_no_color["iter "+str(iter)] = list(distribution_no_colors.values())
+
+        distribution_cost = result_iter[2]
+        data_distribution_cost['cost'] = list(distribution_cost.keys())
+        data_distribution_cost["iter "+str(iter)] = list(distribution_cost.values())
+
+    cumulative_distribution_no_color = calculate_cumulative_prob(data_distribution_no_color)
+    cumulative_distribution_cost = calculate_cumulative_prob(data_distribution_cost)
+
+    if is_export_data:
+        df = pd.DataFrame.from_dict(data_distribution_no_color)
+        df.to_csv('Adiabatic/result_distribution_no_color.csv', index=False, sep='\t')
+        print("Adiabatic/result_distribution_no_color.csv file created successfully!")
+
+        df = pd.DataFrame.from_dict(data_distribution_cost)
+        df.to_csv('Adiabatic/result_distribution_cost.csv', index=False, sep='\t')
+        print("Adiabatic/result_distribution_cost.csv file created successfully!")
+
+        df = pd.DataFrame.from_dict(cumulative_distribution_no_color)
+        df.to_csv('Adiabatic/result_cumulative_distribution_no_color.csv', index=False, sep='\t')
+        print("Adiabatic/result_cumulative_distribution_no_color.csv file created successfully!")
+
+        df = pd.DataFrame.from_dict(cumulative_distribution_cost)
+        df.to_csv('Adiabatic/result_cumulative_distribution_cost.csv', index=False, sep='\t')
+        print("Adiabatic/result_cumulative_distribution_cost.csv file created successfully!")
+
+    plt.clf()
+    plt.figure(figsize=(8, 6))# Set chart size
+    keys = list(data_distribution_no_color.keys())[1:]
+    df = pd.DataFrame(data_distribution_no_color)
+    begin = keys[0]
+    final = keys[1]
+    plt.plot(df['no_colors'], df[begin], label='Begin', marker='o', linestyle='-')
+    plt.plot(df['no_colors'], df[final], label='Final', marker='s', linestyle='--')
+    plt.title('Probability of colors')
+    plt.xlabel('Colors')
+    plt.ylabel('Probability')
+    plt.xticks(df['no_colors'],rotation=45)  # Rotate x-axis labels for better readability
+    plt.tight_layout()  # Adjust spacing for labels
+    plt.legend()
+    plt.grid(True)
+    # plt.show()
+    plt.savefig('Adiabatic/Probability of colors.PNG')
+
+    plt.clf()
+    plt.figure(figsize=(8, 6))  # Set chart size
+    keys = list(data_distribution_cost.keys())[1:]
+    df = pd.DataFrame(data_distribution_cost)
+    begin = keys[0]
+    final = keys[1]
+    plt.plot(df['cost'], df[begin], label='Begin', marker='o', linestyle='-')
+    plt.plot(df['cost'], df[final], label='Final', marker='s', linestyle='--')
+    plt.title('Probability of cost')
+    plt.xlabel('Cost')
+    plt.ylabel('Probability')
+    plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+    plt.tight_layout()  # Adjust spacing for labels
+    plt.legend()
+    plt.grid(True)
+    plt.savefig('Adiabatic/Probability of cost.PNG')
+
+
+    # cummulative proba
+    plt.clf()
+    plt.figure(figsize=(8, 6))  # Set chart size
+    keys = list(cumulative_distribution_no_color.keys())[1:]
+    df = pd.DataFrame(cumulative_distribution_no_color)
+    begin = keys[0]
+    final = keys[1]
+    plt.plot(df['no_colors'], df[begin], label='Begin', marker='o', linestyle='-')
+    plt.plot(df['no_colors'], df[final], label='Final', marker='s', linestyle='--')
+    plt.title('Cumulative probability of colors')
+    plt.xlabel('Colors')
+    plt.ylabel('Cumulative probability')
+    plt.xticks(df['no_colors'],rotation=45)  # Rotate x-axis labels for better readability
+    plt.tight_layout()  # Adjust spacing for labels
+    plt.legend()
+    plt.grid(True)
+    # plt.show()
+    plt.savefig('Adiabatic/Cumulative probability of colors.PNG')
+
+    plt.clf()
+    plt.figure(figsize=(8, 6))  # Set chart size
+    keys = list(cumulative_distribution_cost.keys())[1:]
+    df = pd.DataFrame(cumulative_distribution_cost)
+    begin = keys[0]
+    final = keys[1]
+    plt.plot(df['cost'], df[begin], label='Begin', marker='o', linestyle='-')
+    plt.plot(df['cost'], df[final], label='Final', marker='s', linestyle='--')
+    plt.title('Cumulative probability of cost')
+    plt.xlabel('Cost')
+    plt.ylabel('Cumulative probability')
+    plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+    plt.tight_layout()  # Adjust spacing for labels
+    plt.legend()
+    plt.grid(True)
+    # plt.show()
+    plt.savefig('Adiabatic/Cumulative probability of cost.PNG')
+
 
