@@ -40,7 +40,7 @@ def H(gcp, T, no_shots, show_iter=False):
         end = T+1
         step = 1
 
-    for iter in range(start, end, step):
+    for iter in range(start, end+step, step):
         print('iter:', iter, 'delta_t:', delta_t)
         t = 1
         qreg_q = None
@@ -52,8 +52,9 @@ def H(gcp, T, no_shots, show_iter=False):
         qc.reset(qreg_q)
         qc.h(qreg_q)  # Apply Hadamard gate
         qc.barrier()
+
         for _ in range(iter):
-            qc.rx(-2 * t, qreg_q)
+            qc.rx(2 * t, qreg_q)
             for h in H_z_p:
                 w = h[0] / H_z
                 idx = h[1]
@@ -69,7 +70,7 @@ def H(gcp, T, no_shots, show_iter=False):
         qc.measure(qreg_q, creg_c)
         solutions = find_solution(qc, no_shots, bit_strings)
         states.append([iter, solutions])
-
+        # print(qc)
     return states
 
 
@@ -88,9 +89,9 @@ def find_solution(circuit, no_shots, bit_strings):
     # print("time_taken = ", result.time_taken)
     solutions = result.get_counts(circuit)
     solutions = inversion_affichage(solutions)  # Reverse qubit order
-    for state in bit_strings:
-        if state not in solutions:
-            solutions[state] = 0
+    # for state in bit_strings:
+    #     if state not in solutions:
+    #         solutions[state] = 0
     return solutions
 
 
@@ -126,10 +127,42 @@ def run(gcp, T, no_shots, show_iter, P, C):
         distribution[state] = [cost_by_state, prob]
         # print('state:',state, 'cost:', cost_by_state, 'prob', prob)
 
-    distribution = {i[0]:i[1] for i in sorted(distribution.items(), key = lambda x: x[1][1], reverse=True)}
+    distribution = {i[0]:i[1] for i in sorted(distribution.items(), key = lambda x: x[1][0], reverse=True)}
     # solutions = solutions
-    for k, v in distribution.items():
-        print(k, v)
+    print("-"*20)
+    no_states = len(distribution.keys())
+    print(f"Have {no_states:d} states")
+    prob_is_solutions = 0
+    prob_has_K_colors = 0
+    no_state_has_K_colors = 0
+    no_state_is_solution = 0
+    for state, v in distribution.items():
+        cost = v[0]
+        prob_by_simulator = v[1]
+        if has_K_color(state, K, edges, len(gcp.nodes)):
+            no_state_has_K_colors+=1
+            prob_has_K_colors+=prob_by_simulator
+            if is_solution(state, K, len(gcp.nodes)):
+                no_state_is_solution+=1
+                prob_is_solutions += prob_by_simulator
+                print(state, cost, prob_by_simulator)
+    # print()
+    # print("no_state_has_K_colors is", no_state_has_K_colors)
+    # print(f"prob_state_has_K_colors is {prob_has_K_colors:.2f}% in all states (captured)")
+    # print(f"prob_state_has_K_colors is {no_state_has_K_colors/len(distribution.keys()):.4f}% (all states have same probability)")
+    #
+    # print()
+    # print("no_state_is_solution is", no_state_is_solution)
+    # print(f"prob_is_solutions is {prob_is_solutions:.2f}% in all states (captured)")
+    # print(f"prob_is_solutions is {no_state_is_solution/len(distribution.keys()):.4f}% (all states have same probability)")
+    #
+    # print()
+    # print(
+    #     f"Probability of 1 solution is {prob_is_solutions / prob_has_K_colors:.4f}% in all states have 3 colors (captured)")
+    # print(
+    #     f"Probability of 1 solution is {no_state_is_solution / no_state_has_K_colors * 100:.2f}% in all states have 3 colors (all states have same probability)")
+
+    # print(prob_is_solutions)
 
     return results
 
@@ -260,13 +293,14 @@ if __name__ == '__main__':
     # make a graph
     edges = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3)]
     K = 3
-    A = 1000
+    A = 10000
     P = A
-    C = 1000
+    C = 100
     no_shots = 2048
     T = 100
 
 
+
     gcp = Graph_Coloring(edges,K=K, A=A, node_size=500, show_graph=False, save_graph=True)
-    results = run(gcp, T, no_shots, show_iter=True, P=P, C=C)
-    create_chart(results, is_export_data=True)
+    results = run(gcp, T, no_shots, show_iter=False, P=P, C=C)
+    # create_chart(results, is_export_data=True)

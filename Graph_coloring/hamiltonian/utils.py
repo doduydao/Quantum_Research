@@ -119,6 +119,12 @@ def compare_cost_by_iter(solution_iters, fx, no_nodes, egdes, P, C):
             else:
                 distribution_cost[cost_by_state] += prob
 
+        file = open("finql_distribution.txt", "w")
+        for k, v in distribution_cost.items():
+            line = str(k) + "\t" + str(v)+"\n"
+            file.write(line)
+        file.close()
+        continue
         distribution_no_colors = {i[0]: round(i[1],2) for i in sorted(distribution_no_colors.items(), key=lambda item: item[0])}
         distribution_cost = {i[0]: round(i[1],2) for i in sorted(distribution_cost.items(), key=lambda item: item[0])}
         info.append([iter, round(energy, 2), distribution_no_colors, distribution_cost])
@@ -141,4 +147,27 @@ def calculate_cumulative_prob(data):
     return cumulative_data
 
 
+def has_K_color(state, K, edges, n):
+    no_conflict = calculate_no_conflict(state, n, edges)
+    no_colors = count_color(state, n)
+
+    if no_conflict == 0 and no_colors == K:
+        return True
+    else:
+        return False
+
+def is_solution(state, K, n):
+    colors = list()
+    step = int(len(state) / n)
+    for i in range(0, len(state), step):
+        colors.append(state[i:i + step])
+
+    for color in colors:
+        tmp = []
+        for i in range(K):
+            tmp.append(int(color[i]))
+        if sum(tmp) != 1:
+            return False
+    return True
+    # return False
 
