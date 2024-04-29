@@ -22,12 +22,33 @@ def read_hits(path):
 
     return layers
 
-if __name__ == '__main__':
-    hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sel/event000001000-hits-sel-01.csv'
-    hits = read_hits(hits_path)
-    for k, v in hits.items():
-        print(k, v)
+def get_data_from_sublayer(hits, sublayer):
+    new_hits = dict()
+    for p, hp in hits.items():
 
+        sub = dict()
+        for h in hp: # Hp : tập các hit có trên cùng 1 layer
+            if h.z not in sub:
+                sub[h.z] = [h]
+            else:
+                sub[h.z] += [h]
+        sub = list(sorted(sub.items(), key=lambda x:x[0]))
+        for sublayer in sub:
+            print(sublayer)
+        # print(subs)
+        print()
+        break
+        new_hits[p] = new_hp
+
+    return hits
+
+
+if __name__ == '__main__':
+    hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\event000001000-hits.csv'
+    hits = read_hits(hits_path)
+    # for k, v in hits.items():
+    #     print(k, v)
+    get_data_from_sublayer(hits, 2)
     # layers = list(hits.keys())
     # for l in layers[:4]:
     #     hs = hits[l][:6]

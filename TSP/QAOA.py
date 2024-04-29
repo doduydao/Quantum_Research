@@ -51,7 +51,7 @@ def H_D(qreg_q, beta) -> QuantumCircuit:
     :rtype: QuantumCircuit()
     """
     qc = QuantumCircuit(qreg_q)
-    qc.rx(2 * beta, qreg_q)
+    qc.rx(-2 * beta, qreg_q)
     qc.barrier()
     return qc
 
@@ -349,12 +349,12 @@ def create_chart(results, is_export_data=True):
 if __name__ == '__main__':
     # make a graph
     edge_with_weights = [(0, 1, 1), (0, 2, 1.41), (0, 3, 2.23), (1, 2, 1), (1, 3, 1.41), (2, 3, 1)]
-    A = 1000
-    B = 1000
+    A = 100
+    B = 100
     tsp = TSP(edge_with_weights, A=A, B=B, node_size=500, show_graph=False, save_graph=True)
     no_shots = 2048
-    p_qc = 15
-    no_iters_optim = 500
+    p_qc = 10
+    no_iters_optim = 1000
     optim_method = 'cobyla'
     results = run(tsp, p_qc, optim_method, no_shots, no_iters_optim, show_iter=True)
     create_chart(results, is_export_data=True)

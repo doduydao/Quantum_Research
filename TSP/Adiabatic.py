@@ -192,11 +192,10 @@ def create_chart(results, is_export_data=True):
 if __name__ == '__main__':
     # make a graph
     edge_with_weights = [(0, 1, 1), (0, 2, 1.41), (0, 3, 2.23), (1, 2, 1), (1, 3, 1.41), (2, 3, 1)]
-    A = 1000
-    B = 1000
+    A = 100
+    B = 100
     no_shots = 2048
-    T = 500
-
+    T = 200
     tsp = TSP(edge_with_weights, A=A, B=B, node_size=500, show_graph=False, save_graph=False)
     results = run(tsp, T, no_shots, show_iter=True)
     create_chart(results, is_export_data=True)

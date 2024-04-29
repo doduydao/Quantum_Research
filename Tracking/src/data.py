@@ -25,3 +25,5 @@ class Angle:
         v1_normalized = v1 / np.linalg.norm(v1)
         v2_normalized = v2 / np.linalg.norm(v2)
         return np.arccos(np.dot(v1_normalized, v2_normalized))
+
+

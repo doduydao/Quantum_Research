@@ -3,7 +3,9 @@ from read_data import *
 # import pulp
 import cplex
 from docplex.mp.model import Model
-
+import json
+from show_3D import *
+import random
 
 def run(hits):
     model = Model(name="Track")
@@ -68,27 +70,63 @@ def run(hits):
                         c2 = -(x[p, t, i] + x[p + 1, t, j] + x[p + 2, t, k]) - 3 * y[p, t, i, j, k] <= 0
                         model.add_constraint(c1)
                         model.add_constraint(c2)
-    # model.print_information()
-    # model.solve()
-    # model.print_solution()
+    model.print_information()
+    model.solve()
+    model.print_solution()
     model.export_as_lp("model_docplex")
+    model.solution.export("solution.json")
+    f = open('solution.json')
+    result = json.load(f)
+    f.close()
+    return result['CPLEXSolution']['variables']
 
-    return model
 
+def pick_random_hits(no_track, hits):
+    layers = list(hits.keys())
+    new_hits = dict()
+    for p, hp in hits.items:
+        idx = []
+        while len(idx) < no_track:
+            id = random.randint(0, len(hp))
+            if id not in idx:
+                idx.append(id)
+        new_hp = [hp[i] for i in idx]
+        new_hits[p] = new_hp
+    return new_hits
 
 if __name__ == '__main__':
-    # hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/event000001000-hits.csv'
-    hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sel/event000001000-hits-sel-01.csv'
+    hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\event000001000-hits.csv'
+    # hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sel\event000001000-hits-sel-01.csv'
     hits = read_hits(hits_path)
-    layers = list(hits.keys())
-    hits_test = dict()
 
-    # no_track = 2
-    no_layer = 3
-    for l in layers[:no_layer]:
-        hs = hits[l]
-        hits_test[l] = hs
+    hits_test = dict()
+    layers = list(hits.keys())
+
+    no_track = 3
+    no_layer = 7
+    # for l in layers[:no_layer]:
+    #     hs = hits[l][:no_track]
+    #     hits_test[l] = hs
         # for h in hs:
         #     print(l, h.id)
     # run(hits_test)
-    model = run(hits_test)
+    hits_test = pick_random_hits(no_track, hits)
+
+
+    result = run(hits_test)
+    solution = dict()
+    for var in result:
+        x_p_t_i = var['name'].split('_')
+        if x_p_t_i[0] =='y':
+            continue
+        p = int(x_p_t_i[1])
+        t = int(x_p_t_i[2])
+        i = int(x_p_t_i[3])
+        print(var['name'])
+
+        if t not in solution:
+            solution[t] = [hits[layers[p - 1]][i-1]]
+        else:
+            solution[t] += [hits[layers[p - 1]][i-1]]
+
+    display(hits_test, solution)
