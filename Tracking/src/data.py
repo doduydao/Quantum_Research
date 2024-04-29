@@ -2,12 +2,14 @@ import numpy as np
 
 
 class Hit:
-    def __init__(self, id, x, y, z, layer):
-        self.id = id
+    def __init__(self, hit_id, x, y, z, volume_id, layer_id, module_id):
+        self.hit_id = hit_id
         self.x = x
         self.y = y
         self.z = z # z sẽ có 4 giá trị khác nhau (lấy cái số 2)
-        self.layer = layer
+        self.volume_id = volume_id
+        self.layer_id = layer_id
+        self.module_id = module_id
 
 class Segment:
     def __init__(self, hit_1, hit_2):

@@ -5,7 +5,7 @@ from read_data import *
 
 
 
-def display(hits, solution):
+def display(hits, solution, out):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     layers = list(hits.keys())
@@ -30,7 +30,8 @@ def display(hits, solution):
     ax.set_ylabel('Y Label')
     ax.set_zlabel('Z Label')
 
-    plt.show()
+    # plt.show()
+    plt.savefig(out)
 
 
 if __name__ == '__main__':
@@ -38,10 +39,5 @@ if __name__ == '__main__':
     hits_path = 'C:/Users/dddo/PycharmProjects/Quantum_Research/Tracking/event000001000/sel/event000001000-hits-sel-01.csv'
     hits = read_hits(hits_path)
     layers = list(hits.keys())
-    tmp = []
-    for p in layers:
-        tmp.append(hits[p][0])
-
-    solution = {'1':tmp}
-    display(hits, solution)
+    # display(hits, solution,out)
 

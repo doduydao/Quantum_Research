@@ -119,20 +119,27 @@ def run(hits):
 
 if __name__ == '__main__':
     # hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/event000001000-hits.csv'
-    hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sel\event000001000-hits-sel-01.csv'
-    hits = read_hits(hits_path)
+    # hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sel\event000001000-hits-sel-01.csv'
+    hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sublayer_2\event000001000-hits_random.csv'
+    hits_volume = read_hits(hits_path)
+    hits = dict()
+    for k, v in hits_volume.items():
+        # print(k, v)
+        print("Volume id:", k)
+        print("No_layers:", len(v))
+        hits = v
+
     layers = list(hits.keys())
-    hits_test = dict()
 
     # no_track = 2
-    no_layer = 5
-    for l in layers[:no_layer]:
-        hs = hits[l]
-        hits_test[l] = hs
+    # no_layer = 5
+    # for l in layers[:no_layer]:
+    #     hs = hits[l]
+    #     hits_test[l] = hs
         # for h in hs:
         #     print(l, h.id)
-    result = run(hits_test)
-
+    result = run(hits)
+    #
     # f = open('result_pulp.json')
     # result = json.load(f)
     # f.close()
@@ -151,4 +158,5 @@ if __name__ == '__main__':
         else:
             solution[t] += [hits[layers[p - 1]][i - 1]]
 
-    display(hits_test, solution)
+    out = "C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sublayer_2\\result.PNG"
+    display(hits, solution, out)

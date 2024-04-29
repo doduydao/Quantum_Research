@@ -95,25 +95,31 @@ def pick_random_hits(no_track, hits):
     return new_hits
 
 if __name__ == '__main__':
-    hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\event000001000-hits.csv'
+    # hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\event000001000-hits.csv'
     # hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sel\event000001000-hits-sel-01.csv'
-    hits = read_hits(hits_path)
+    hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sublayer_2\event000001000-hits_random.csv'
+    hits_volume = read_hits(hits_path)
+    hits = dict()
 
-    hits_test = dict()
+
+
+
+    # hits_volume
+    # hits_test = dict()
     layers = list(hits.keys())
 
-    no_track = 3
-    no_layer = 7
+    # no_track = 3
+    # no_layer = 7
     # for l in layers[:no_layer]:
     #     hs = hits[l][:no_track]
     #     hits_test[l] = hs
         # for h in hs:
         #     print(l, h.id)
     # run(hits_test)
-    hits_test = pick_random_hits(no_track, hits)
+    # hits_test = pick_random_hits(no_track, hits)
 
 
-    result = run(hits_test)
+    result = run(hits)
     solution = dict()
     for var in result:
         x_p_t_i = var['name'].split('_')
@@ -129,4 +135,4 @@ if __name__ == '__main__':
         else:
             solution[t] += [hits[layers[p - 1]][i-1]]
 
-    display(hits_test, solution)
+    display(hits, solution)

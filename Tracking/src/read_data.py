@@ -6,56 +6,110 @@ def read_hits(path):
     df = pd.read_csv(path)
     # print(df)
     list_df = [row.tolist() for index, row in df.iterrows()]
-    layers = dict()
+    volumes = dict()
+
     for i in list_df:
-        hit = Hit(id=i[0],
+        hit = Hit(
+                  hit_id=i[0],
                   x=i[1],
                   y=i[2],
                   z=i[3],
-                  layer=i[5]
+                  volume_id=i[4],
+                  layer_id =i[5],
+                  module_id = i[6]
                   )
-        layer = int(hit.layer)
-        if layer not in layers:
-            layers[layer] = [hit]
+        volume_id = int(hit.volume_id)
+        if volume_id not in volumes:
+            volumes[volume_id] = [hit]
         else:
-            layers[layer] += [hit]
-
-    return layers
-
-def get_data_from_sublayer(hits, sublayer):
-    new_hits = dict()
-    for p, hp in hits.items():
-
-        sub = dict()
-        for h in hp: # Hp : tập các hit có trên cùng 1 layer
-            if h.z not in sub:
-                sub[h.z] = [h]
+            volumes[volume_id] += [hit]
+    for id, hits in volumes.items():
+        layers = dict()
+        for hit in hits:
+            layer_id = int(hit.layer_id)
+            if layer_id not in layers:
+                layers[layer_id] = [hit]
             else:
-                sub[h.z] += [h]
-        sub = list(sorted(sub.items(), key=lambda x:x[0]))
-        for sublayer in sub:
-            print(sublayer)
-        # print(subs)
-        print()
-        break
-        new_hits[p] = new_hp
+                layers[layer_id] += [hit]
+        volumes[id] = layers
 
-    return hits
+    return volumes
+
+def select_hits_from_sublayer(hits, sublayer_selected, no_hits):
+
+    sublayer_dict = dict()
+    for hit in hits:  # Hp : tập các hit có trên cùng 1 layer
+        if hit.z not in sublayer_dict:
+            sublayer_dict[hit.z] = [hit]
+        else:
+            sublayer_dict[hit.z] += [hit]
+    sublayer_dict = [i[1] for i in sorted(sublayer_dict.items(), key=lambda x: x[0])]
+    hits = sublayer_dict[sublayer_selected]
+
+    idx = set()
+
+    while len(idx) < no_hits:
+        idx.add(random.randint(0, len(hits)-1))
+
+    hits_random = []
+    for i in idx:
+        hits_random.append(hits[i])
+    return hits_random
+
+def select_hits_from_volume(hits, volume_id):
+    return hits[volume_id]
+
+
+def write_out_selected_hits(hits_volume, pathout):
+
+    hit_id = []
+    x = []
+    y = []
+    z = []
+    volume_id = []
+    layer_id = []
+    module_id = []
+
+    for layer, hits in hits_volume.items():
+        for hit in hits:
+            hit_id.append(hit.hit_id)
+            x.append(hit.x)
+            y.append(hit.y)
+            z.append(hit.z)
+            volume_id.append(hit.volume_id)
+            layer_id.append(hit.layer_id)
+            module_id.append(hit.module_id)
+    print(len(hit_id))
+    data_dict = {"hit_id": hit_id,
+                 "x":x,
+                 "y":y,
+                 "z":z,
+                 "volume_id":volume_id,
+                 "layer_id":layer_id,
+                 "module_id":module_id}
+    df = pd.DataFrame.from_dict(data_dict)
+    df.to_csv(pathout, index=False, sep=',')
+    print("Done!")
 
 
 if __name__ == '__main__':
     hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\event000001000-hits.csv'
-    hits = read_hits(hits_path)
-    # for k, v in hits.items():
-    #     print(k, v)
-    get_data_from_sublayer(hits, 2)
-    # layers = list(hits.keys())
-    # for l in layers[:4]:
-    #     hs = hits[l][:6]
-    #     for h in hs:
-    #         print(l, h.id)
-    #     # print()
+    all_hits = read_hits(hits_path)
 
+    volume_id = 9
+    no_hits = 10
+    sublayer_selected = 2
+    hits_volume = select_hits_from_volume(all_hits, volume_id)
+
+    for k, v in hits_volume.items():
+        hits_layer = select_hits_from_sublayer(v, sublayer_selected, no_hits)
+        hits_volume[k] = hits_layer
+    # for k, v in hits_volume.items():
+    #     print(k, len(v))
+
+
+    pathout = "C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sublayer_2\event000001000-hits_random.csv"
+    write_out_selected_hits(hits_volume, pathout)
 
 
     # print(len(layers))
