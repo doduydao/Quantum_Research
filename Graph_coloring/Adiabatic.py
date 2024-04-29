@@ -32,7 +32,7 @@ def H(gcp, T, no_shots):
     states = []
     for iter in [1, T]:
         print('iter:', iter, 'delta_t:', delta_t)
-        t = 1
+
         qreg_q = QuantumRegister(no_qubits, 'q')
         creg_c = ClassicalRegister(no_qubits, 'c')
         qc = QuantumCircuit(qreg_q, creg_c)
@@ -40,20 +40,22 @@ def H(gcp, T, no_shots):
         qc.h(qreg_q)  # Apply Hadamard gate
         qc.barrier()
 
+        t = 1
         for _ in range(iter):
             qc.rx(-2 * t, qreg_q)
             for h in H_z_p:
                 w = h[0] / H_z
                 idx = h[1]
                 if len(idx) == 1:
-                    qc.rz(2 * (1-t) * w, qreg_q[idx[0]])
+                    qc.rz(2 * (1 - t) * w, qreg_q[idx[0]])
                 else:
                     i = idx[0]
                     j = idx[1]
                     qc.cx(qreg_q[i], qreg_q[j])
-                    qc.rz(2 * (1-t) * w, qreg_q[j])
+                    qc.rz(2 * (1 - t) * w, qreg_q[j])
                     qc.cx(qreg_q[i], qreg_q[j])
             t = round(t - delta_t, num_decimals)
+
         qc.measure(qreg_q, creg_c)
         solutions = find_solution(qc, no_shots, bit_strings)
         states.append([iter, solutions])
@@ -81,11 +83,10 @@ def find_solution(circuit, no_shots, bit_strings):
     return solutions
 
 
-def run(gcp, T, no_shots, P, C):
+def run(gcp, T, no_shots, B, C):
     states = H(gcp, T, no_shots)
-    fx = gcp.get_pair_coeff_var()
+    results = compare_cost_by_iter(states, len(gcp.nodes), gcp.edges, B, C)
 
-    results = compare_cost_by_iter(states, fx, len(gcp.nodes), gcp.edges, P, C)
     solutions = states[-1][-1]
     redundants = []
 
@@ -100,14 +101,11 @@ def run(gcp, T, no_shots, P, C):
     fig_counted.savefig('Adiabatic/histogram_optimal.png', bbox_inches='tight')
     fig_proba.savefig('Adiabatic/distribution_optimal.png', bbox_inches='tight')
 
-    # distribution = dict()
-    # for state, shot in solutions.items():
-    #     no_conflict = calculate_no_conflict(state, len(gcp.nodes), gcp.edges)
-    #     no_colors = count_color(state, len(gcp.nodes))
-    #     cost_by_state = P * penalty_part(state, len(gcp.nodes)) + C * no_conflict + no_colors
-    #     prob = shot / no_shots * 100
-    #     distribution[state] = [cost_by_state, prob]
-        # print('state:',state, 'cost:', cost_by_state, 'prob', prob)
+    solutions = {i[0]: i[1] for i in sorted(solutions.items(), key=lambda x: x[1])}
+    for state, shot in solutions.items():
+        cost_by_state = calculate_cost(state, B, C, len(gcp.nodes), gcp.edges)
+        prob = shot / no_shots * 100
+        print('state:', state, 'cost:', cost_by_state, 'prob', prob)
 
     return results
 
@@ -117,11 +115,11 @@ if __name__ == '__main__':
     edges = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3)]
     K = 3
     A = 1000
-    P = A
-    C = 100
+    B = 100
+    C = 10
     no_shots = 2048
     T = 100
 
-    gcp = Graph_Coloring(edges,K=K, A=A, node_size=500, show_graph=False, save_graph=True)
-    results = run(gcp, T, no_shots, P=P, C=C)
-    create_chart(results, is_export_data=True)
+    gcp = Graph_Coloring(edges, K=K, A=A, node_size=500, show_graph=False, save_graph=True)
+    results = run(gcp, T, no_shots, B=B, C=C)
+    create_chart(name="Adiabatic", results=results, is_export_data=True)

@@ -54,9 +54,13 @@ class Graph_Coloring_Model:
 
             )
             hamiltonian_cost_dist += self.model.sum(
-                    (1 - self.Z[i, k]) * (1 - self.Z[j, k]) / 2
+                    (1 - self.Z[i, k]) * (1 - self.Z[j, k]) / 4
                     for i, j in self.edges
                 )
+            # hamiltonian_cost_dist += self.model.sum(
+            #     (1 - self.Z[j, k]) * (1 - self.Z[i, k]) / 4
+            #     for i, j in self.edges
+            # )
         return cost_dist, hamiltonian_cost_dist
 
     def penalty(self) -> (Model, Model):
@@ -362,14 +366,18 @@ if __name__ == '__main__':
     # print(tsp.cost_penalty_2[1])
     print("Hamiltonian:")
     prettyprint(tsp.Hamiltonian)
+    gates, offset = tsp.get_pair_coeff_gate()
+    print(offset)
+    for gate in gates:
+        print(gate)
+
     print("Hamiltonian simplification:")
     prettyprint(tsp.simply_Hamiltonian())
-    # gates, offset = tsp.get_pair_coeff_gate()
-    # print(offset)
-    # for gate in gates:
-    #     print(gate)
-
-    qubit_op, offset = tsp.to_ising
+    gates, offset = tsp.get_pair_coeff_gate()
+    print(offset)
+    for gate in gates:
+        print(gate)
+    # qubit_op, offset = tsp.to_ising
     # print(qubit_op)
-    print("Offset:", offset)
-    print("Qubit operators:", qubit_op)
+    # print("Offset:", offset)
+    # print("Qubit operators:", qubit_op)
