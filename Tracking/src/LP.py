@@ -4,7 +4,7 @@ import pulp
 import cplex
 import json
 from show_3D import *
-def run(hits):
+def run(hits, out_result):
     # define model
     model = pulp.LpProblem('Track_Finding', pulp.LpMinimize)
 
@@ -54,6 +54,7 @@ def run(hits):
 
     # first constraints:
     # print("First constraints:")
+    count_constraint = 1
     for i in range(1, no_hits + 1):
         for p in range(1, no_layer + 1):
             tmp = 0
@@ -62,11 +63,14 @@ def run(hits):
                 tmp += x[key]
             constraint = tmp == 1
             # print(constraint)
-            model.addConstraint(constraint)
+            constraint_name = "FC_" + str(count_constraint)
+            count_constraint += 1
+            model.addConstraint(constraint, name=constraint_name)
 
     # print()
     # Second constraints:
     # print("Second constraints:")
+    count_constraint = 1
     for t in range(1, no_track + 1):
         for p in range(1, no_layer + 1):
             tmp = 0
@@ -75,13 +79,17 @@ def run(hits):
                 tmp += x[key]
             constraint = tmp == 1
             # print(constraint)
-            model.addConstraint(constraint)
+
+            constraint_name = "SC_" + str(count_constraint)
+            count_constraint += 1
+            model.addConstraint(constraint, name=constraint_name)
     # print()
 
     # Addition constraints:
     # print(y_p_t_i_j_k)
 
     print("Addition constraints")
+    count_constraint = 1
     for t in range(1, no_track + 1):
         for p in range(1, no_layer-1):
             for i in range(1, no_hits + 1):
@@ -91,19 +99,31 @@ def run(hits):
                         key_2 = str(p+1) + str(t) + str(j)
                         key_3 = str(p+2) + str(t) + str(k)
                         key_y = str(p) + str(t) + str(i) + str(j) + str(k)
-                        constraint_1 = x[key_1] + x[key_2] + x[key_3] - y[key_y] <= 2
-                        constraint_2 = -(x[key_1] + x[key_2] + x[key_3]) - 3 * y[key_y] <= 0
-                        model.addConstraint(constraint_1)
-                        model.addConstraint(constraint_2)
-                        # print(constraint_1)
-                        # print(constraint_2)
+
+                        constraint_1 = y[key_y] <= x[key_1]
+                        constraint_2 = y[key_y] <= x[key_2]
+                        constraint_3 = y[key_y] <= x[key_3]
+                        constraint_4 = x[key_1] + x[key_2] + x[key_3] - y[key_y] <= 2
+
+                        constraint_1_name = "AC_"+ str(count_constraint)+"_1"
+                        constraint_2_name = "AC_" + str(count_constraint)+"_2"
+                        constraint_3_name = "AC_" + str(count_constraint)+"_3"
+                        constraint_4_name = "AC_" + str(count_constraint)+"_4"
+                        count_constraint += 1
+                        model.addConstraint(constraint_1, name=constraint_1_name)
+                        model.addConstraint(constraint_2, name=constraint_2_name)
+                        model.addConstraint(constraint_3, name=constraint_3_name)
+                        model.addConstraint(constraint_4, name=constraint_4_name)
 
 
-    print(model, file=open('model.txt', 'w'))
+
+    print(model, file=open('model_dao.txt', 'w'))
     # Solving
     # solver = pulp.getSolver('CPLEX_CMD')
-    model.solve()
+    solver = pulp.CPLEX_PY()
+    model.solve(solver)
     print(model.sol_status)
+
     # model.writeLP("just_to_be_sure.txt")
 
     vars = dict()
@@ -112,19 +132,19 @@ def run(hits):
         vars[var.name] = var.varValue
         print(var.name, var.varValue)
 
-    with open("result_pulp.json", "w") as outfile:
+    with open(out_result, "w") as outfile:
         json.dump(vars, outfile)
 
     return vars
 
 if __name__ == '__main__':
     # hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/event000001000-hits.csv'
-    # hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sel\event000001000-hits-sel-01.csv'
-    hits_path = 'C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sublayer_2\event000001000-hits_random.csv'
+    # hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sel/event000001000-hits-sel-01.csv'
+    hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sel/event000001000-hits-sel-vol_9_10_track.csv'
+
     hits_volume = read_hits(hits_path)
     hits = dict()
     for k, v in hits_volume.items():
-        # print(k, v)
         print("Volume id:", k)
         print("No_layers:", len(v))
         hits = v
@@ -138,9 +158,10 @@ if __name__ == '__main__':
     #     hits_test[l] = hs
         # for h in hs:
         #     print(l, h.id)
-    result = run(hits)
-    #
-    # f = open('result_pulp.json')
+    out_result = 'result_pulp_dao.json'
+    result = run(hits, out_result)
+
+    # f = open(out_result)
     # result = json.load(f)
     # f.close()
 
@@ -158,5 +179,6 @@ if __name__ == '__main__':
         else:
             solution[t] += [hits[layers[p - 1]][i - 1]]
 
-    out = "C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sublayer_2\\result.PNG"
+    out = "C:\\Users\dddo\PycharmProjects\Quantum_Research\Tracking\event000001000\sublayer_2\\result_Bogdan.PNG"
+    # out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sublayer_2/result_bogdan_2.PNG"
     display(hits, solution, out)
