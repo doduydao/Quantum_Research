@@ -1,0 +1,150 @@
+/Users/doduydao/anaconda3/envs/track_finding/bin/python /Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/LP_CPLEX_F1.py
+Volume id: 9
+No_layers: 7
+[2, 4, 6, 8, 10, 12, 14]
+7 6
+---First constraints---
+Number of first constraints: 42
+---Second constraints---
+Number of second constraints: 42
+---Addition constraints---
+Number of addition constraints: 32400
+Model: Track
+ - number of variables: 6732
+   - binary=252, integer=0, continuous=6480
+ - number of constraints: 32484
+   - linear=32484
+ - parameters: defaults
+ - objective: minimize
+ - problem type is: MILP
+Version identifier: 22.1.1.0 | 2022-11-28 | 9160aff4d
+CPXPARAM_Read_DataCheck                          1
+Found incumbent of value 0.520039 after 0.00 sec. (1.46 ticks)
+Tried aggregator 1 time.
+MIP Presolve eliminated 6480 rows and 0 columns.
+Reduced MIP has 26004 rows, 6732 columns, and 65304 nonzeros.
+Reduced MIP has 252 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.02 sec. (39.61 ticks)
+Probing time = 0.01 sec. (9.41 ticks)
+Tried aggregator 1 time.
+Detecting symmetries...
+Reduced MIP has 26004 rows, 6732 columns, and 65304 nonzeros.
+Reduced MIP has 6732 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.06 sec. (122.34 ticks)
+Probing time = 0.01 sec. (9.09 ticks)
+Clique table members: 39266.
+MIP emphasis: balance optimality and feasibility.
+MIP search method: dynamic search.
+Parallel mode: deterministic, using up to 8 threads.
+Root relaxation solution time = 0.04 sec. (62.47 ticks)
+
+        Nodes                                         Cuts/
+   Node  Left     Objective  IInf  Best Integer    Best Bound    ItCnt     Gap
+
+*     0+    0                            0.5200        0.0000           100.00%
+*     0+    0                            0.2743        0.0000           100.00%
+      0     0        0.0000    66        0.2743        0.0000      157  100.00%
+      0     0        0.0000    68        0.2743      Cuts: 63      208  100.00%
+*     0+    0                            0.0326        0.0000           100.00%
+      0     0        0.0000    64        0.0326      Cuts: 37      249  100.00%
+
+Repeating presolve.
+Tried aggregator 2 times.
+MIP Presolve eliminated 24531 rows and 6558 columns.
+MIP Presolve modified 371 coefficients.
+Aggregator did 3 substitutions.
+Reduced MIP has 1454 rows, 171 columns, and 4270 nonzeros.
+Reduced MIP has 171 binaries, 0 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.01 sec. (21.30 ticks)
+Probing fixed 106 vars, tightened 0 bounds.
+Probing changed sense of 36 constraints.
+Probing time = 0.00 sec. (4.82 ticks)
+Cover probing fixed 0 vars, tightened 181 bounds.
+Tried aggregator 1 time.
+MIP Presolve eliminated 1454 rows and 171 columns.
+All rows and columns eliminated.
+Presolve time = 0.00 sec. (0.60 ticks)
+Represolve time = 0.02 sec. (34.09 ticks)
+
+Root node processing (before b&c):
+  Real time             =    0.67 sec. (1250.28 ticks)
+Parallel b&c, 8 threads:
+  Real time             =    0.00 sec. (0.00 ticks)
+  Sync time (average)   =    0.00 sec.
+  Wait time (average)   =    0.00 sec.
+                          ------------
+Total (root+branch&cut) =    0.67 sec. (1250.28 ticks)
+{'index': '1', 'name': 'x_1_1_2', 'value': '1.0'}
+{'index': '7', 'name': 'x_2_1_2', 'value': '1.0'}
+{'index': '13', 'name': 'x_3_1_2', 'value': '1.0'}
+{'index': '19', 'name': 'x_4_1_2', 'value': '1.0'}
+{'index': '25', 'name': 'x_5_1_2', 'value': '1.0'}
+{'index': '31', 'name': 'x_6_1_2', 'value': '1.0'}
+{'index': '37', 'name': 'x_7_1_2', 'value': '1.0'}
+{'index': '42', 'name': 'x_1_2_1', 'value': '1.0'}
+{'index': '48', 'name': 'x_2_2_1', 'value': '1.0'}
+{'index': '54', 'name': 'x_3_2_1', 'value': '1.0'}
+{'index': '60', 'name': 'x_4_2_1', 'value': '1.0'}
+{'index': '66', 'name': 'x_5_2_1', 'value': '1.0'}
+{'index': '72', 'name': 'x_6_2_1', 'value': '1.0'}
+{'index': '78', 'name': 'x_7_2_1', 'value': '1.0'}
+{'index': '86', 'name': 'x_1_3_3', 'value': '1.0'}
+{'index': '92', 'name': 'x_2_3_3', 'value': '1.0'}
+{'index': '98', 'name': 'x_3_3_3', 'value': '1.0'}
+{'index': '104', 'name': 'x_4_3_3', 'value': '1.0'}
+{'index': '110', 'name': 'x_5_3_3', 'value': '1.0'}
+{'index': '116', 'name': 'x_6_3_3', 'value': '1.0'}
+{'index': '122', 'name': 'x_7_3_3', 'value': '1.0'}
+{'index': '129', 'name': 'x_1_4_4', 'value': '1.0'}
+{'index': '136', 'name': 'x_2_4_5', 'value': '1.0'}
+{'index': '142', 'name': 'x_3_4_5', 'value': '1.0'}
+{'index': '147', 'name': 'x_4_4_4', 'value': '1.0'}
+{'index': '154', 'name': 'x_5_4_5', 'value': '1.0'}
+{'index': '159', 'name': 'x_6_4_4', 'value': '1.0'}
+{'index': '166', 'name': 'x_7_4_5', 'value': '1.0'}
+{'index': '173', 'name': 'x_1_5_6', 'value': '1.0'}
+{'index': '179', 'name': 'x_2_5_6', 'value': '1.0'}
+{'index': '185', 'name': 'x_3_5_6', 'value': '1.0'}
+{'index': '191', 'name': 'x_4_5_6', 'value': '1.0'}
+{'index': '197', 'name': 'x_5_5_6', 'value': '1.0'}
+{'index': '203', 'name': 'x_6_5_6', 'value': '1.0'}
+{'index': '209', 'name': 'x_7_5_6', 'value': '1.0'}
+{'index': '214', 'name': 'x_1_6_5', 'value': '1.0'}
+{'index': '219', 'name': 'x_2_6_4', 'value': '1.0'}
+{'index': '225', 'name': 'x_3_6_4', 'value': '1.0'}
+{'index': '232', 'name': 'x_4_6_5', 'value': '1.0'}
+{'index': '237', 'name': 'x_5_6_4', 'value': '1.0'}
+{'index': '244', 'name': 'x_6_6_5', 'value': '1.0'}
+{'index': '249', 'name': 'x_7_6_4', 'value': '1.0'}
+{'index': '295', 'name': 'y_1_1_2_2_2', 'value': '1.0'}
+{'index': '511', 'name': 'y_2_1_2_2_2', 'value': '1.0'}
+{'index': '727', 'name': 'y_3_1_2_2_2', 'value': '1.0'}
+{'index': '943', 'name': 'y_4_1_2_2_2', 'value': '1.0'}
+{'index': '1159', 'name': 'y_5_1_2_2_2', 'value': '1.0'}
+{'index': '1332', 'name': 'y_1_2_1_1_1', 'value': '1.0'}
+{'index': '1548', 'name': 'y_2_2_1_1_1', 'value': '1.0'}
+{'index': '1764', 'name': 'y_3_2_1_1_1', 'value': '1.0'}
+{'index': '1980', 'name': 'y_4_2_1_1_1', 'value': '1.0'}
+{'index': '2196', 'name': 'y_5_2_1_1_1', 'value': '1.0'}
+{'index': '2498', 'name': 'y_1_3_3_3_3', 'value': '1.0'}
+{'index': '2714', 'name': 'y_2_3_3_3_3', 'value': '1.0'}
+{'index': '2930', 'name': 'y_3_3_3_3_3', 'value': '1.0'}
+{'index': '3146', 'name': 'y_4_3_3_3_3', 'value': '1.0'}
+{'index': '3362', 'name': 'y_5_3_3_3_3', 'value': '1.0'}
+{'index': '3628', 'name': 'y_1_4_4_5_5', 'value': '1.0'}
+{'index': '3879', 'name': 'y_2_4_5_5_4', 'value': '1.0'}
+{'index': '4090', 'name': 'y_3_4_5_4_5', 'value': '1.0'}
+{'index': '4275', 'name': 'y_4_4_4_5_4', 'value': '1.0'}
+{'index': '4522', 'name': 'y_5_4_5_4_5', 'value': '1.0'}
+{'index': '4787', 'name': 'y_1_5_6_6_6', 'value': '1.0'}
+{'index': '5003', 'name': 'y_2_5_6_6_6', 'value': '1.0'}
+{'index': '5219', 'name': 'y_3_5_6_6_6', 'value': '1.0'}
+{'index': '5435', 'name': 'y_4_5_6_6_6', 'value': '1.0'}
+{'index': '5651', 'name': 'y_5_5_6_6_6', 'value': '1.0'}
+{'index': '5817', 'name': 'y_1_6_5_4_4', 'value': '1.0'}
+{'index': '5998', 'name': 'y_2_6_4_4_5', 'value': '1.0'}
+{'index': '6219', 'name': 'y_3_6_4_5_4', 'value': '1.0'}
+{'index': '6466', 'name': 'y_4_6_5_4_5', 'value': '1.0'}
+{'index': '6651', 'name': 'y_5_6_4_5_4', 'value': '1.0'}
+
+Process finished with exit code 0
