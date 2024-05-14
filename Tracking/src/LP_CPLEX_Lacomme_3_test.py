@@ -12,7 +12,6 @@ def create_variables(model, hits):
     layers = sorted(list(hits.keys()))
     K = len(layers) - 2
 
-    # create phi_p_p'_i_j variables
     v = []
     for p_1 in range(0, K + 1):
         for p_2 in range(1, K + 2):
@@ -42,17 +41,19 @@ def create_variables(model, hits):
     s[0, 1] = 0
     print("No_phi_variables: ", len(c))
 
-    v = []
-    for p in range(1, K + 1):
-        v.append(p)
-    q = model.continuous_var_dict(v, name="q", lb=0)
+    # v = []
+    # for p in range(1, K + 1):
+    #     v.append(p)
+    #
+    # q = model.continuous_var_dict(v, name="q", lb=0)
 
     ob = model.continuous_var(name="ob")
-    # print("No_phi_variables: ", len(c))
 
-    return phi, c, s, ob, q
+    return ob, phi, c
 
-
+def distance(h1, h2):
+    distance = math.sqrt((h2.x - h1.x) ** 2 + (h2.y - h1.y) ** 2 + (h2.z - h1.z) ** 2)
+    return distance
 def run(hits, nt, M, model_path_out, solution_path_out):
     model = Model(name="Track")
     layers = sorted(list(hits.keys()))
@@ -60,7 +61,7 @@ def run(hits, nt, M, model_path_out, solution_path_out):
     K = len(layers) - 2
     print("K=", K)
     # create_variables
-    phi, c, s, ob, q = create_variables(model, hits)
+    ob, phi, c = create_variables(model, hits)
 
     # add constraints
     # first constraints:
@@ -133,7 +134,7 @@ def run(hits, nt, M, model_path_out, solution_path_out):
 
     for p_1 in range(0, K):
         n_p_1 = len(hits[layers[p_1]]) + 1
-        # min_beta_layer = 1000000000
+        min_beta_layer = 1000000000
         for i in range(1, n_p_1):
             min_beta = 1000000000
             for p_2 in range(p_1 + 1, K + 1):
@@ -147,7 +148,9 @@ def run(hits, nt, M, model_path_out, solution_path_out):
                             h_k = hits[layers[p_3]][k - 1]
                             seg_1 = Segment(h_j, h_i)
                             seg_2 = Segment(h_j, h_k)
-                            beta = Angle(seg_1=seg_1, seg_2=seg_2).angle * (h_k.z//100 - h_i.z//100)
+
+                            # beta = Angle(seg_1=seg_1, seg_2=seg_2).angle * (h_k.z - h_i.z)
+                            beta = Angle(seg_1=seg_1, seg_2=seg_2).angle * (distance(h_i, h_j) + distance(h_j, h_k))
 
                             if beta < min_beta:
                                 min_beta = beta
@@ -155,31 +158,11 @@ def run(hits, nt, M, model_path_out, solution_path_out):
                             count_constraint += 1
                             model.add_constraint(
                                 beta <= (2 - phi[p_1, p_2, i, j] - phi[p_2, p_3, j, k]) * M + c[p_2, j], ctname=c7)
-            # print("best beta for p, i:", p_1, i, min_beta)
-            min_cost += min_beta
-            # if min_beta < min_beta_layer:
-            #     min_beta_layer = min_beta
-        # print("best beta for p:", p_1, min_beta_layer)
-        # min_cost += min_beta_layer
-    # print("Number of Fiveth constraints:", count_constraint)
 
-    for p_1 in range(0, K):
-        n_p_1 = len(hits[layers[p_1]]) + 1
-        for i in range(1, n_p_1):
-            for p_2 in range(p_1 + 1, K + 1):
-                n_p_2 = len(hits[layers[p_2]]) + 1
-                for j in range(1, n_p_2):
-                    model.add_constraint(s[p_1, i] + c[p_2, j] <= s[p_2, j] + (1 - phi[p_1, p_2, i, j]) * M)
-
-    for p in range(1, K + 1):
-        n_p = len(hits[layers[p]]) + 1
-        tmp = 0
-        for i in range(1, n_p):
-            tmp += s[p, i]
-        model.add_constraint(q[p] == tmp)
-
-    for p in range(2, K + 1):
-        model.add_constraint(q[p - 1] <= q[p])
+            # min_cost += min_beta
+            if min_beta < min_beta_layer:
+                min_beta_layer = min_beta
+        min_cost += min_beta_layer
 
     objective = 0
     for p_1 in range(1, K + 1):
@@ -187,9 +170,7 @@ def run(hits, nt, M, model_path_out, solution_path_out):
         for i in range(1, n_p_1):
             objective += c[p_1, i]
 
-
     model.add_constraint(ob >= min_cost * nt)
-    model.add_constraint(ob >= q[K])
     model.add_constraint(ob >= objective)
     model.set_objective('min', ob)
 
@@ -252,15 +233,7 @@ def create_source_sink(hits):
         layer_id=0,
         module_id=0
     )
-    # source = Hit(
-    #     hit_id=10,
-    #     x=0,
-    #     y=0,
-    #     z=0,
-    #     volume_id=0,
-    #     layer_id=0,
-    #     module_id=0
-    # )
+
     sink = Hit(
         hit_id=10,
         x=sum([h.x for h in last_layer]) / len(last_layer),
@@ -275,7 +248,7 @@ def create_source_sink(hits):
 
 
 if __name__ == '__main__':
-    hits_path = '../event000001000/sel/event000001000-hits-sel-01.csv'
+    hits_path = '../event000001000/volume_id_9/hits-vol_9_20_track.csv'
     hits_volume = read_hits(hits_path)
     hits = dict()
     for k, v in hits_volume.items():
@@ -290,7 +263,7 @@ if __name__ == '__main__':
     model_path_out = "result_f2_Lacomme/model_docplex.lp"
     solution_path_out = "result_f2_Lacomme/solution.json"
 
-    nt = 6
+    nt = 20
     M = 10000
     result = run(hits, nt, M, model_path_out, solution_path_out)
 
