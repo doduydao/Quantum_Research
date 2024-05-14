@@ -8,9 +8,33 @@ import random
 import matplotlib.pyplot as plt
 
 
-def run(hits, model_path_out, solution_path_out):
-    model = Model(name="Track")
+def calculate_all_angles(hits, out):
+    # tính tất cả các góc nhỏ nhất theo layer
+    angles = dict()
+    layers = list(hits.keys())
+    no_layer = len(layers)
+    no_hits = len(hits[2])
+    for p in range(0, no_layer - 2):
+        min_angle = 10
+        for i in range(0, no_hits):
+            for j in range(0, no_hits):
+                for k in range(0, no_hits):
+                    h_i = hits[layers[p]][i - 1]
+                    h_j = hits[layers[p + 1]][j - 1]
+                    h_k = hits[layers[p + 2]][k - 1]
+                    seg_1 = Segment(h_j, h_i)
+                    seg_2 = Segment(h_j, h_k)
+                    tmp_angle = Angle(seg_1=seg_1, seg_2=seg_2).angle
+                    if min_angle > tmp_angle:
+                        min_angle = tmp_angle
+        angles[layers[p + 1]] = min_angle * len(hits[layers[p + 1]])
+    with open(out, 'w') as file:
+        json.dump(angles, file)
+    return angles
 
+
+def run(hits, model_path_out, solution_path_out, LB):
+    model = Model(name="Track")
     layers = list(hits.keys())
     print("layers:", layers)
     no_layer = len(layers)
@@ -20,9 +44,10 @@ def run(hits, model_path_out, solution_path_out):
     f = model.binary_var_dict(
         [(p, i, j) for p in range(1, no_layer) for i in range(1, no_hits + 1) for j in range(1, no_hits + 1)],
         name="f")
-    # print(f)
+
     z = model.continuous_var_dict(
-        [(p, i, j, k) for p in range(1, no_layer - 1) for i in range(1, no_hits + 1) for j in range(1, no_hits + 1) for
+        [(p, i, j, k) for p in range(1, no_layer - 1) for i in range(1, no_hits + 1) for j in range(1, no_hits + 1)
+         for
          k in
          range(1, no_hits + 1)], name="z", lb=0, ub=1)
 
@@ -39,6 +64,8 @@ def run(hits, model_path_out, solution_path_out):
                     objective += z[p, i, j, k] * Angle(seg_1=seg_1, seg_2=seg_2).angle
 
     model.set_objective('min', objective)
+
+    model.add_constraint(objective >= LB, ctname="LB of objective value")
 
     # Constraints
     # first constraints:
@@ -149,31 +176,36 @@ if __name__ == '__main__':
     hits_volume = read_hits(hits_path)
     hits = dict()
     for k, v in hits_volume.items():
-        # print(k, v)
-        print("Volume id:", k)
-        print("No_layers:", len(v))
+        # print("Volume id:", k)
+        # print("No_layers:", len(v))
         hits = v
 
-    # hits_volume
-    layers = list(hits.keys())
-
-    model_path_out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_Lacomme/model_docplex.lp"
-    solution_path_out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_Lacomme/solution.json"
-    result = run(hits, model_path_out, solution_path_out)
-
-    solution = dict()
-    segments = []
-    for var in result:
-        f_p_i_j = var['name'].split('_')
-        if f_p_i_j[0] == 'z':
-            continue
-        print(var)
-        p = int(f_p_i_j[1])
-        i = int(f_p_i_j[2])
-        j = int(f_p_i_j[3])
-
-        h_1 = hits[layers[p - 1]][i - 1]
-        h_2 = hits[layers[p]][j - 1]
-        segments.append([h_1, h_2])
-    out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_Lacomme/result.PNG"
-    display(hits, segments, out)
+    out_angles_path = "result_f2/min_angles.json"
+    angles = calculate_all_angles(hits, out_angles_path)
+    LB = 0
+    for k, v in angles.items():
+        LB += v
+    print(LB)
+    # model_path_out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2/model_docplex.lp"
+    # solution_path_out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2/solution.json"
+    # result = run(hits, model_path_out, solution_path_out, LB)
+    #
+    # # with open(solution_path_out) as file:
+    # #     result = json.load(file)['CPLEXSolution']['variables']
+    #
+    # layers = list(hits.keys())
+    # segments = []
+    # for var in result:
+    #     f_p_i_j = var['name'].split('_')
+    #     if f_p_i_j[0] == 'z':
+    #         continue
+    #     print(var)
+    #     p = int(f_p_i_j[1])
+    #     i = int(f_p_i_j[2])
+    #     j = int(f_p_i_j[3])
+    #
+    #     h_1 = hits[layers[p - 1]][i - 1]
+    #     h_2 = hits[layers[p]][j - 1]
+    #     segments.append([h_1, h_2])
+    # out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2/result.PNG"
+    # display(hits, segments, out)

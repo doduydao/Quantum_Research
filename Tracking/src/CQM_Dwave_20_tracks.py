@@ -88,15 +88,16 @@ def run_hybrid_solver(cqm):
     feasible_sampleset = sampleset.filter(lambda row: row.is_feasible)
 
     try:
+
         sample = feasible_sampleset.first.sample
+        energy = feasible_sampleset.first.energy
+
     except:
         print("\nNo feasible solutions found.")
         exit()
 
-    return sample
-    # soln = {key[0]: key[1] for key, val in sample.items() if val == 1.0}
-    #
-    # return soln
+    return sample, energy
+
 def display(hits, segments, out=""):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
@@ -147,15 +148,16 @@ if __name__ == "__main__":
     with open(model_path_out, 'rb') as f:
         cqm = dimod.lp.load(f)
         # print(cqm)
-    # sample = run_hybrid_solver(cqm)
+    import time
 
-    # for k, v in sample.items():
-    #     print(k, v)
-    #
+    start = time.time()
+    sample, energy = run_hybrid_solver(cqm)
+    end = time.time()
+    print("Time:", end - start)
+    print("Objective value:", energy)
     solution_path = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_20_hits/solution_dwave.json"
-    # with open(solution_path, 'w', encoding='utf-8') as f:
-    #     json.dump(sample, f, ensure_ascii=False, indent=4)
-
+    with open(solution_path, 'w', encoding='utf-8') as f:
+        json.dump(sample, f, ensure_ascii=False, indent=4)
 
     with open(solution_path, 'r', encoding='utf-8') as f:
         result = json.load(f)
