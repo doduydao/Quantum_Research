@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 def read_truth_data(path):
     df = pd.read_csv(path)
+
     # print(df)
     return df
 
@@ -39,7 +40,7 @@ def display(hits, solution, out=""):
 
 
 if __name__ == '__main__':
-    hits_path = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sel/event000001000-hits-sel-01.csv"
+    hits_path = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/volume_id_9/hits-vol_9_20_track.csv"
 
     hits_volume = read_hits(hits_path)
     hits = dict()
@@ -48,16 +49,16 @@ if __name__ == '__main__':
         print("Volume id:", k)
         print("No_layers:", len(v))
         hits = v
-
     layers = list(hits.keys())
 
-    truth_data = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sel/event000001000-truth-wo-noise-sel-01.csv"
+    truth_data = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/event000001000-truth-wo-noise.csv"
     df = read_truth_data(truth_data)
 
     track = dict()
     for l, hp in hits.items():
         for i in range(len(hp)):
             id = hp[i].hit_id
+
             particle_id = df[df['hit_id'] == id]['particle_id'].values[0]
             # print(particle_id.values[0])
             hp[i].particle_id = particle_id
@@ -73,5 +74,5 @@ if __name__ == '__main__':
     # out = "data.PNG"
     # solution = dict()
     # out = ""
-    out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sel/proposal_result.PNG"
+    out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/volume_id_9/proposal_result.PNG"
     display(hits, track, out)

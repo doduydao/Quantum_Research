@@ -3,7 +3,8 @@ import math
 
 
 class Hit:
-    def __init__(self, hit_id, particle_id=None, x=0, y=0, z=0, volume_id=None, layer_id=None, module_id=None):
+    def __init__(self, hit_id, particle_id=None, x=0, y=0, z=0, volume_id=None, layer_id=None, module_id=None,
+                 selected=None):
         self.hit_id = hit_id
         self.x = x
         self.y = y
@@ -12,6 +13,7 @@ class Hit:
         self.volume_id = volume_id
         self.layer_id = layer_id
         self.module_id = module_id
+        self.selected = selected
 
 
 class Segment:
