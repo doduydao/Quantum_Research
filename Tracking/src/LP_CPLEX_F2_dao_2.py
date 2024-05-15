@@ -8,31 +8,6 @@ import random
 import matplotlib.pyplot as plt
 
 
-def calculate_all_angles(hits, out):
-    # tính tất cả các góc nhỏ nhất theo layer
-    angles = dict()
-    layers = list(hits.keys())
-    no_layer = len(layers)
-    no_hits = len(hits[2])
-    for p in range(0, no_layer - 2):
-        min_angle = 10
-        for i in range(0, no_hits):
-            for j in range(0, no_hits):
-                for k in range(0, no_hits):
-                    h_i = hits[layers[p]][i - 1]
-                    h_j = hits[layers[p + 1]][j - 1]
-                    h_k = hits[layers[p + 2]][k - 1]
-                    seg_1 = Segment(h_j, h_i)
-                    seg_2 = Segment(h_j, h_k)
-                    tmp_angle = Angle(seg_1=seg_1, seg_2=seg_2).angle
-                    if min_angle > tmp_angle:
-                        min_angle = tmp_angle
-        angles[layers[p + 1]] = min_angle * len(hits[layers[p + 1]])
-    with open(out, 'w') as file:
-        json.dump(angles, file)
-    return angles
-
-
 def run(hits, model_path_out, solution_path_out, M):
     model = Model(name="Track")
 
@@ -196,10 +171,8 @@ if __name__ == '__main__':
     # hits_volume
 
     out_angles_path = "result_f2_20_hits/min_angles.json"
-    angles = calculate_all_angles(hits, out_angles_path)
-    # LB = 0
-    # for k, v in angles.items():
-    #     LB += v
+
+
     model_path_out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_20_hits/model_docplex.lp"
     solution_path_out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_20_hits/solution.json"
 
