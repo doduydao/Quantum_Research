@@ -130,7 +130,7 @@ def display(hits, segments, out=""):
 # ------- Main program -------
 if __name__ == "__main__":
 
-    hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/volume_id_9/hits-vol_9_20_track.csv'
+    hits_path = '../event000001000/volume_id_9/hits-vol_9_20_track.csv'
     hits_volume = read_hits(hits_path)
     hits = dict()
     for k, v in hits_volume.items():
@@ -142,12 +142,13 @@ if __name__ == "__main__":
     # hits_volume
     layers = list(hits.keys())
 
-    model_path_out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_20_hits/model_docplex_CQM.lp"
+    model_path_out = "result_f2_dao/model_docplex_CQM.lp"
+    # model_path_out = "result_f2_dao/model_docplex.lp"
     build_model(hits, model_path_out)
 
     with open(model_path_out, 'rb') as f:
         cqm = dimod.lp.load(f)
-        # print(cqm)
+
     import time
 
     start = time.time()
@@ -155,7 +156,7 @@ if __name__ == "__main__":
     end = time.time()
     print("Time:", end - start)
     print("Objective value:", energy)
-    solution_path = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_20_hits/solution_dwave.json"
+    solution_path = "result_f2_dao/solution_dwave.json"
     with open(solution_path, 'w', encoding='utf-8') as f:
         json.dump(sample, f, ensure_ascii=False, indent=4)
 
@@ -174,5 +175,5 @@ if __name__ == "__main__":
         h_1 = hits[layers[p - 1]][i - 1]
         h_2 = hits[layers[p]][j - 1]
         segments.append([h_1, h_2])
-    out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/result_f2_20_hits/result_dwave.PNG"
+    out = "result_f2_dao/result_dwave.PNG"
     display(hits, segments, out)

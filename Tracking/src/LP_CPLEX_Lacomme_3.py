@@ -52,6 +52,10 @@ def create_variables(model, hits):
 
     return phi, c, s, ob, q
 
+def distance(h1, h2):
+    distance = math.sqrt((h2.x - h1.x) ** 2 + (h2.y - h1.y) ** 2 + (h2.z - h1.z) ** 2)
+    return distance
+
 
 def run(hits, nt, M, model_path_out, solution_path_out):
     model = Model(name="Track")
