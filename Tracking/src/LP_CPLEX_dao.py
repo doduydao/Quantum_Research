@@ -6,6 +6,7 @@ from docplex.mp.model import Model
 import json
 import random
 import matplotlib.pyplot as plt
+from docplex.mp.model_reader import ModelReader
 
 
 def create_variables(model, hits):
@@ -25,13 +26,13 @@ def create_variables(model, hits):
     print("No_phi_variables: ", len(phi))
     # print(phi)
     v = []
-    for p_2 in range(1, K + 1):
-        n_p_2 = len(hits[layers[p_2]]) + 1
-        for j in range(1, n_p_2):
-            v.append((p_2, j))
+    for p_1 in range(0, K):
+        n_p_1 = len(hits[layers[p_1]]) + 1
+        for i in range(1, n_p_1):
+            v.append((p_1, i))
     c = model.continuous_var_dict(v, name="c", lb=0)
     print("No_phi_variables: ", len(c))
-    c[0, 1] = 0
+    # c[0, 1] = 0
     ob = model.continuous_var(name="ob")
 
     return ob, phi, c
@@ -94,12 +95,15 @@ def run(hits, M, model_path_out, solution_path_out):
             c3 = "TC_" + str(count_constraint)
             model.add_constraint(tmp <= 1, ctname=c3)
 
-    print("---Fourth constraints---")
-    count_constraint = 0
+    print("---Fourth, Fifth and Sixth constraints---")
+    count_constraint_4 = 0
+    count_constraint_5 = 0
+    count_constraint_6 = 0
     for p_1 in range(1, K + 1):
         n_p_1 = len(hits[layers[p_1]]) + 1
         tmp_1 = 0
         tmp_2 = 0
+
         for i in range(1, n_p_1):
             t_1 = 0
             for p_2 in range(0, p_1):
@@ -113,26 +117,27 @@ def run(hits, M, model_path_out, solution_path_out):
                 for j in range(1, n_p_2):
                     tmp_2 += phi[p_1, p_2, i, j]
                     t_2 += phi[p_1, p_2, i, j]
-            count_constraint += 1
-            c4 = "FoC_" + str(count_constraint)
+            count_constraint_4 += 1
+            c4 = "FoC_" + str(count_constraint_4)
             model.add_constraint(t_1 == t_2, ctname=c4)
-        count_constraint += 1
-        c4 = "FoC_" + str(count_constraint)
-        model.add_constraint(tmp_1 >= min_nt, ctname=c4)
-        count_constraint += 1
-        c4 = "FoC_" + str(count_constraint)
-        model.add_constraint(tmp_1 <= n_p_1 - 1, ctname=c4)
-        count_constraint += 1
-        c4 = "FoC_" + str(count_constraint)
-        model.add_constraint(tmp_2 >= min_nt, ctname=c4)
-        count_constraint += 1
-        c4 = "FoC_" + str(count_constraint)
-        model.add_constraint(tmp_2 <= n_p_1 - 1, ctname=c4)
 
-    print("--- Fiveth constraints---")
-    count_constraint = 1
+        count_constraint_5 += 1
+        c5 = "FiC_" + str(count_constraint_5)
+        model.add_constraint(tmp_1 >= min_nt, ctname=c5)
+        count_constraint_5 += 1
+        c5 = "FiC_" + str(count_constraint_5)
+        model.add_constraint(tmp_1 <= n_p_1 - 1, ctname=c5)
+        count_constraint_6 += 1
+        c6 = "SiC_" + str(count_constraint_6)
+        model.add_constraint(tmp_2 >= min_nt, ctname=c6)
+        count_constraint_6 += 1
+        c6 = "SiC_" + str(count_constraint_6)
+        model.add_constraint(tmp_2 <= n_p_1 - 1, ctname=c6)
+
+    print("--- Seventh and Eighth constraints---")
+    count_constraint_7 = 0
+    count_constraint_8 = 0
     min_cost = 0
-    max_cost = 0
     for p_1 in range(0, K):
         n_p_1 = len(hits[layers[p_1]]) + 1
         for i in range(1, n_p_1):
@@ -154,22 +159,24 @@ def run(hits, M, model_path_out, solution_path_out):
                                 min_beta = beta
                             if beta > max_beta:
                                 max_beta = beta
-                            c7 = "FiC_" + str(count_constraint)
-                            count_constraint += 1
+                            count_constraint_7 += 1
+                            c7 = "SeC_" + str(count_constraint_7)
                             model.add_constraint(
-                                beta <= c[p_2, j] + (2 - phi[p_1, p_2, i, j] - phi[p_2, p_3, j, k]) * M, ctname=c7)
-            model.add_constraint(c[p_1 + 1, i] >= min_beta)
-            model.add_constraint(c[p_1 + 1, i] <= max_beta)
+                                beta <= c[p_1, i] + (2 - phi[p_1, p_2, i, j] - phi[p_2, p_3, j, k]) * M, ctname=c7)
+            count_constraint_8 += 1
+            c8 = "EiC_" + str(count_constraint_8)
+            model.add_constraint(c[p_1, i] >= min_beta, ctname=c8)
+            count_constraint_8 += 1
+            c8 = "EiC_" + str(count_constraint_8)
+            model.add_constraint(c[p_1, i] <= max_beta, ctname=c8)
             min_cost += min_beta
-            max_cost += max_beta
 
     objective = 0
-    for p_1 in range(1, K + 1):
+    for p_1 in range(0, K):
         n_p_1 = len(hits[layers[p_1]]) + 1
         for i in range(1, n_p_1):
             objective += c[p_1, i]
 
-    model.add_constraint(objective <= max_cost)
     model.add_constraint(objective >= min_cost)
     model.add_constraint(ob >= objective)
     model.set_objective('min', ob)
@@ -248,7 +255,7 @@ def create_source_sink(hits):
 
 
 if __name__ == '__main__':
-    hits_path = '../event000001000/volume_id_9/hits-vol_9_20_track.csv'
+    hits_path = '../event000001000/volume_id_9/hits-vol_9_FGC_track.csv'
     # hits_path = '../event000001000/sel/event000001000-hits-sel-01.csv'
     hits_volume = read_hits(hits_path)
     hits = dict()
@@ -261,11 +268,13 @@ if __name__ == '__main__':
     hits[16] = [sink]
     layers = sorted(list(hits.keys()))
 
-    model_path_out = "result_f2_dao/model_docplex.lp"
-    solution_path_out = "result_f2_dao/solution.json"
+    model_path_out = "result_dao_FGC/model_docplex.lp"
+    solution_path_out = "result_dao_FGC/solution.json"
 
     M = 10000
     result = run(hits, M, model_path_out, solution_path_out)
+    # with open(solution_path_out, 'r', encoding='utf-8') as f:
+    #     result = json.load(f)['CPLEXSolution']['variables']
 
     segments = []
     for var in result:
@@ -285,5 +294,5 @@ if __name__ == '__main__':
         h_1 = hits[layers[p_1]][i - 1]
         h_2 = hits[layers[p_2]][j - 1]
         segments.append([h_1, h_2])
-    out = "result_f2_dao/result.PNG"
+    out = "result_dao_FGC/result.PNG"
     display(hits, segments, out)

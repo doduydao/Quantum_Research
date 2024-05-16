@@ -71,5 +71,5 @@ if __name__ == '__main__':
     solution = dict()
     out = ""
     # out = "/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/sublayer_2/result_Bogdan_2.PNG"
-    # display(hits, solution, out)
+    display(hits, solution, out)
     print("Dao")
