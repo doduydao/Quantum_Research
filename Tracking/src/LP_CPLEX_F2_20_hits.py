@@ -170,6 +170,37 @@ def display(hits, segments, out=""):
     plt.show()
 
 
+def load_hits(df):
+    list_df = [row.tolist() for index, row in df.iterrows()]
+    volumes = dict()
+
+    for i in list_df:
+        hit = Hit(
+            hit_id=i[0],
+            x=i[1],
+            y=i[2],
+            z=i[3],
+            volume_id=i[4],
+            layer_id=i[5],
+            module_id=i[6],
+            particle_id=i[7]
+        )
+        volume_id = int(hit.volume_id)
+        if volume_id not in volumes:
+            volumes[volume_id] = [hit]
+        else:
+            volumes[volume_id] += [hit]
+    for id, hits in volumes.items():
+        layers = dict()
+        for hit in hits:
+            layer_id = int(hit.layer_id)
+            if layer_id not in layers:
+                layers[layer_id] = [hit]
+            else:
+                layers[layer_id] += [hit]
+        volumes[id] = layers
+    return volumes
+
 if __name__ == '__main__':
     hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/volume_id_9/hits-vol_9_20_track.csv'
     hits_volume = read_hits(hits_path)

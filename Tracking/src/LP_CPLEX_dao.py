@@ -255,7 +255,7 @@ def create_source_sink(hits):
 
 
 if __name__ == '__main__':
-    hits_path = '../event000001000/volume_id_9/hits-vol_9_FGC_track.csv'
+    hits_path = '../event000001000/volume_id_9/hits-vol_9_FGC_min_20_track_with_noise.csv'
     # hits_path = '../event000001000/sel/event000001000-hits-sel-01.csv'
     hits_volume = read_hits(hits_path)
     hits = dict()
@@ -268,8 +268,8 @@ if __name__ == '__main__':
     hits[16] = [sink]
     layers = sorted(list(hits.keys()))
 
-    model_path_out = "result_dao_FGC/model_docplex.lp"
-    solution_path_out = "result_dao_FGC/solution.json"
+    model_path_out = "result_dao_FGC/model_docplex_hits-vol_9_FGC_min_20_track_with_noise.lp"
+    solution_path_out = "result_dao_FGC/solution_hits-vol_9_FGC_min_20_track_with_noise.json"
 
     M = 10000
     result = run(hits, M, model_path_out, solution_path_out)
@@ -294,5 +294,5 @@ if __name__ == '__main__':
         h_1 = hits[layers[p_1]][i - 1]
         h_2 = hits[layers[p_2]][j - 1]
         segments.append([h_1, h_2])
-    out = "result_dao_FGC/result.PNG"
+    out = "result_dao_FGC/result_hits-vol_9_FGC_min_20_track_with_noise.PNG"
     display(hits, segments, out)

@@ -31,7 +31,28 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\Tracking\event000001000\volume_id_9\event000001000-volume_id_9.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\Tracking\event000001000\volume_id_9\hits-vol_9_20_track.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\Tracking\event000001000\volume_id_9\hits-vol_9_FGC_min_20_track_with_noise.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\Tracking\event000001000\volume_id_9\hits-vol_9_FGC_track.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
