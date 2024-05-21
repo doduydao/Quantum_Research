@@ -158,7 +158,6 @@ def run(hits, M, model_path_out, solution_path_out, figure_path_out):
         for i in range(1, n_p_1):
             objective += c[p_1, i]
     model.add_constraint(objective >= min_cost, ctname="LB of objective value")
-    # model.add_constraint(objective <= 0.6618)
     model.add_constraint(ob >= objective)
     model.set_objective('min', ob)
 
@@ -224,15 +223,15 @@ def display(hits, segments, out=""):
 
 
 if __name__ == '__main__':
-    src_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/data_selected'
+    src_path = '../data_selected'
     data_path = src_path + '/15hits/know_track/hits.csv'
 
     hits_volume = read_hits(data_path)
     hits = hits_volume[9]
 
-    model_path_out = "results/15hits/know_track/model_docplex_LB.lp"
-    solution_path_out = "results/15hits/know_track/solution_LB.json"
-    figure_path_out = "results/15hits/know_track/result_LB.PNG"
+    model_path_out = "results/15hits/known_track/model_docplex_LB.lp"
+    solution_path_out = "results/15hits/known_track/solution_LB.json"
+    figure_path_out = "results/15hits/known_track/result_LB.PNG"
 
     M = 10000
     result = run(hits, M, model_path_out, solution_path_out, figure_path_out)

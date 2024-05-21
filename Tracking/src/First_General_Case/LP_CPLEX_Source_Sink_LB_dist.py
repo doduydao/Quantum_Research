@@ -1,12 +1,8 @@
 from data import *
 from read_data import *
-# import pulp
-import cplex
 from docplex.mp.model import Model
 import json
-import random
 import matplotlib.pyplot as plt
-from docplex.mp.model_reader import ModelReader
 
 
 def create_variables(model, hits):
@@ -63,8 +59,8 @@ def run(hits, M, model_path_out, solution_path_out, figure_path_out):
             tmp += phi[0, p_2, 1, j]
     count_constraint = 1
     c1 = "FC_" + str(count_constraint)
-    # model.add_constraint(tmp >= min_nt, ctname=c1 + "1")
-    model.add_constraint(tmp == max_nt, ctname=c1 + "2")
+    model.add_constraint(tmp >= min_nt, ctname=c1 + "1")
+    model.add_constraint(tmp <= max_nt, ctname=c1 + "2")
 
     # Second constraints:
     print("---Second constraints---")
@@ -75,8 +71,8 @@ def run(hits, M, model_path_out, solution_path_out, figure_path_out):
             tmp += phi[p_1, K + 1, i, 1]
     count_constraint = 1
     c2 = "SC_" + str(count_constraint)
-    # model.add_constraint(tmp >= min_nt, ctname=c2 + "1")
-    model.add_constraint(tmp == max_nt, ctname=c2 + "2")
+    model.add_constraint(tmp >= min_nt, ctname=c2 + "1")
+    model.add_constraint(tmp <= max_nt, ctname=c2 + "2")
 
     # Third constraints:
     print("---Third constraints---")
@@ -164,9 +160,6 @@ def run(hits, M, model_path_out, solution_path_out, figure_path_out):
             count_constraint_8 += 1
             c8 = "EiC_" + str(count_constraint_8)
             model.add_constraint(c[p_1, i] >= min_beta, ctname=c8)
-            # count_constraint_8 += 1
-            # c8 = "EiC_" + str(count_constraint_8)
-            # model.add_constraint(c[p_1, i] <= max_beta, ctname=c8)
             min_cost += min_beta
 
     objective = 0
@@ -272,9 +265,8 @@ def create_source_sink(hits):
 
 
 if __name__ == '__main__':
-    # hits_path = '../event000001000/volume_id_9/hits-vol_9_FGC_track_min_6_track_with_noise.csv'
-    src_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/data_selected'
-    data_path = src_path + '/6hits/unknow_track/hits.csv'
+    src_path = '../data_selected'
+    data_path = src_path + '/15hits/unknown_track/hits.csv'
 
     hits_volume = read_hits(data_path)
     hits = hits_volume[9]
@@ -283,9 +275,9 @@ if __name__ == '__main__':
     hits[16] = [sink]
     layers = sorted(list(hits.keys()))
 
-    model_path_out = "results/6hits/unknow_track/model_docplex_LB_dist_ss.lp"
-    solution_path_out = "results/6hits/unknow_track/solution_LB_dist_ss.json"
-    figure_path_out = "results/6hits/unknow_track/result_LB_dist_ss.PNG"
+    model_path_out = "results/15hits/unknown_track/model_docplex_LB_dist_ss.lp"
+    solution_path_out = "results/15hits/unknown_track/solution_LB_dist_ss.json"
+    figure_path_out = "results/15hits/unknown_track/result_LB_dist_ss.PNG"
 
     M = 10000
     run(hits, M, model_path_out, solution_path_out, figure_path_out)

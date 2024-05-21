@@ -7,33 +7,8 @@ import json
 import random
 import matplotlib.pyplot as plt
 
-def calculate_all_angles(hits, out):
-    # tính tất cả các góc nhỏ nhất theo layer
-    angles = dict()
-    layers = list(hits.keys())
-    no_layer = len(layers)
-    no_hits = len(hits[2])
-    for p in range(0, no_layer - 2):
-        min_angle = 10
-        for i in range(0, no_hits):
-            for j in range(0, no_hits):
-                for k in range(0, no_hits):
-                    h_i = hits[layers[p]][i - 1]
-                    h_j = hits[layers[p + 1]][j - 1]
-                    h_k = hits[layers[p + 2]][k - 1]
-                    seg_1 = Segment(h_j, h_i)
-                    seg_2 = Segment(h_j, h_k)
-                    tmp_angle = Angle(seg_1=seg_1, seg_2=seg_2).angle
-                    if min_angle > tmp_angle:
-                        min_angle = tmp_angle
-        angles[layers[p + 1]] = min_angle * len(hits[layers[p + 1]])
-    with open(out, 'w') as file:
-        json.dump(angles, file)
-    return angles
 
-
-
-def run(hits, model_path_out, solution_path_out, LB):
+def run(hits, model_path_out, solution_path_out, figure_path_out):
     model = Model(name="Track")
 
     layers = list(hits.keys())
@@ -52,16 +27,25 @@ def run(hits, model_path_out, solution_path_out, LB):
          range(1, no_hits + 1)], name="z", lb=0, ub=1)
 
     objective = 0
+    LB = 0
     for p in range(1, no_layer - 1):
-        for i in range(1, no_hits + 1):
-            for j in range(1, no_hits + 1):
-                for k in range(1, no_hits + 1):
+        n_p = len(hits[layers[p - 1]]) + 1
+        for i in range(1, n_p):
+            min_beta = 10000
+            n_p_1 = len(hits[layers[p]]) + 1
+            for j in range(1,n_p_1):
+                n_p_2 = len(hits[layers[p+1]]) + 1
+                for k in range(1, n_p_2):
                     h_i = hits[layers[p - 1]][i - 1]
                     h_j = hits[layers[p]][j - 1]
                     h_k = hits[layers[p + 1]][k - 1]
                     seg_1 = Segment(h_j, h_i)
                     seg_2 = Segment(h_j, h_k)
-                    objective += z[p, i, j, k] * Angle(seg_1=seg_1, seg_2=seg_2).angle
+                    beta = Angle(seg_1=seg_1, seg_2=seg_2).angle
+                    if min_beta > beta:
+                        min_beta = min_beta
+                    objective += z[p, i, j, k] * beta
+            LB += min_beta
 
     model.set_objective('min', objective)
     model.add_constraint(objective >= LB, ctname="LB of objective value")
@@ -73,7 +57,8 @@ def run(hits, model_path_out, solution_path_out, LB):
     for j in range(1, no_hits + 1):
         for p in range(1, no_layer):
             tmp = 0
-            for i in range(1, no_hits + 1):
+            n_p = len(hits[layers[p - 1]]) + 1
+            for i in range(1, n_p):
                 tmp += f[p, i, j]
             constraint_name = "FC_" + str(count_constraint)
             count_constraint += 1
@@ -83,10 +68,12 @@ def run(hits, model_path_out, solution_path_out, LB):
     # Second constraints:
     print("---Second constraints---")
     count_constraint = 0
-    for i in range(1, no_hits + 1):
-        for p in range(1, no_layer):
+    for p in range(1, no_layer):
+        n_p = len(hits[layers[p - 1]]) + 1
+        for i in range(1, n_p):
             tmp = 0
-            for j in range(1, no_hits + 1):
+            n_p_1 = len(hits[layers[p]]) + 1
+            for j in range(1, n_p_1):
                 tmp += f[p, i, j]
             constraint_name = "SC_" + str(count_constraint)
             count_constraint += 1
@@ -96,9 +83,12 @@ def run(hits, model_path_out, solution_path_out, LB):
     print("---Addition constraints---")
     count_constraint = 0
     for p in range(1, no_layer - 1):
-        for i in range(1, no_hits + 1):
-            for j in range(1, no_hits + 1):
-                for k in range(1, no_hits + 1):
+        n_p = len(hits[layers[p - 1]]) + 1
+        for i in range(1, n_p):
+            n_p_1 = len(hits[layers[p]]) + 1
+            for j in range(1, n_p_1):
+                n_p_2 = len(hits[layers[p + 1]]) + 1
+                for k in range(1, n_p_2):
                     c1 = f[p, i, j] + f[p + 1, j, k] - z[p, i, j, k] <= 1
                     c2 = z[p, i, j, k] <= f[p, i, j]
                     c3 = z[p, i, j, k] <= f[p + 1, j, k]
@@ -124,21 +114,24 @@ def run(hits, model_path_out, solution_path_out, LB):
     result = json.load(f)
     f.close()
 
-    return result['CPLEXSolution']['variables']
+    result = result['CPLEXSolution']['variables']
 
+    segments = []
 
-def pick_random_hits(no_track, hits):
-    layers = list(hits.keys())
-    new_hits = dict()
-    for p, hp in hits.items:
-        idx = []
-        while len(idx) < no_track:
-            id = random.randint(0, len(hp))
-            if id not in idx:
-                idx.append(id)
-        new_hp = [hp[i] for i in idx]
-        new_hits[p] = new_hp
-    return new_hits
+    for var in result:
+        f_p_i_j = var['name'].split('_')
+        if f_p_i_j[0] == 'z':
+            continue
+        print(var)
+        p = int(f_p_i_j[1])
+        i = int(f_p_i_j[2])
+        j = int(f_p_i_j[3])
+
+        h_1 = hits[layers[p - 1]][i - 1]
+        h_2 = hits[layers[p]][j - 1]
+        segments.append([h_1, h_2])
+
+    display(hits, segments, figure_path_out)
 
 
 def display(hits, segments, out=""):
@@ -168,7 +161,6 @@ def display(hits, segments, out=""):
 
     plt.savefig(out)
     plt.show()
-
 
 def load_hits(df):
     list_df = [row.tolist() for index, row in df.iterrows()]
@@ -201,20 +193,16 @@ def load_hits(df):
         volumes[id] = layers
     return volumes
 
+
 if __name__ == '__main__':
-    src_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/data_selected'
+    src_path = '../data_selected'
     data_path = src_path + '/20hits/unknow_track/hits.csv'
     hits_volume = read_hits(data_path)
     hits = hits_volume[9]
-
-    out_angles_path = "results/20hits/min_angles.json"
-    angles = calculate_all_angles(hits, out_angles_path)
-    no_track = 20
-    LB = sum(list(angles.values())) * no_track
 
     model_path_out = "results/20hits/unknow_track/model_docplex_LB.lp"
     solution_path_out = "results/20hits/unknow_track/solution.json"
     figure_path_out = "results/20hits/unknow_track/result.PNG"
 
-    result = run(hits, LB, model_path_out, solution_path_out, figure_path_out)
+    result = run(hits, model_path_out, solution_path_out, figure_path_out)
 
