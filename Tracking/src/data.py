@@ -14,6 +14,7 @@ class Hit:
         self.layer_id = layer_id
         self.module_id = module_id
         self.selected = selected
+        self.track = None
 
 
 class Segment:

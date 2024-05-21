@@ -93,7 +93,6 @@ def write_out_selected_hits(hits_volume, pathout):
     print("Done!")
 
 
-
 def decode_particle_id(data):
     """Decode particle_id into vertex id, generation, etc.
     """
