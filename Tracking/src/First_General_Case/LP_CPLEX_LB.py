@@ -225,14 +225,14 @@ def display(hits, segments, out=""):
 
 if __name__ == '__main__':
     src_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/data_selected'
-    data_path = src_path + '/6hits/unknow_track/hits.csv'
+    data_path = src_path + '/15hits/know_track/hits.csv'
 
     hits_volume = read_hits(data_path)
     hits = hits_volume[9]
 
-    model_path_out = "results/6hits/unknow_track/model_docplex_LB.lp"
-    solution_path_out = "results/6hits/unknow_track/solution_LB.json"
-    figure_path_out = "results/6hits/unknow_track/result_LB.PNG"
+    model_path_out = "results/15hits/know_track/model_docplex_LB.lp"
+    solution_path_out = "results/15hits/know_track/solution_LB.json"
+    figure_path_out = "results/15hits/know_track/result_LB.PNG"
 
     M = 10000
     result = run(hits, M, model_path_out, solution_path_out, figure_path_out)
