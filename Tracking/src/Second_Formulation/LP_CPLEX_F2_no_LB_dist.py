@@ -5,6 +5,10 @@ import json
 import matplotlib.pyplot as plt
 
 
+def distance(h1, h2):
+    distance = math.sqrt((h2.x - h1.x) ** 2 + (h2.y - h1.y) ** 2 + (h2.z - h1.z) ** 2)
+    return distance
+
 
 def run(hits, model_path_out, solution_path_out, figure_path_out):
     model = Model(name="Track")
@@ -25,7 +29,10 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
          range(1, no_hits + 1)], name="z", lb=0, ub=1)
 
     objective = 0
+    LB = 0
+
     for p in range(1, no_layer - 1):
+        beta_lower = 100000
         for i in range(1, no_hits + 1):
             for j in range(1, no_hits + 1):
                 for k in range(1, no_hits + 1):
@@ -34,10 +41,16 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
                     h_k = hits[layers[p + 1]][k - 1]
                     seg_1 = Segment(h_j, h_i)
                     seg_2 = Segment(h_j, h_k)
-                    objective += z[p, i, j, k] * Angle(seg_1=seg_1, seg_2=seg_2).angle
-
+                    angle = Angle(seg_1=seg_1, seg_2=seg_2).angle
+                    dist = distance(h_i, h_j) + distance(h_j, h_k)
+                    beta = angle * dist
+                    if beta < beta_lower:
+                        beta_lower = beta
+                    objective += z[p, i, j, k] * beta
+        LB += beta_lower
     model.set_objective('min', objective)
 
+    # model.add_constraint(objective >= LB * no_hits, ctname="LB of objective value")
 
     # Constraints
     # first constraints:
@@ -52,7 +65,7 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
             count_constraint += 1
             model.add_constraint(tmp == 1, ctname=constraint_name)
     print("Number of first constraints:", count_constraint)
-
+    # print()
     # Second constraints:
     print("---Second constraints---")
     count_constraint = 0
@@ -93,30 +106,28 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
 
     model.export_as_lp(model_path_out)
     model.solution.export(solution_path_out)
-
     f = open(solution_path_out)
     result = json.load(f)
     f.close()
 
     result = result['CPLEXSolution']['variables']
-    layers = list(hits.keys())
+
     segments = []
 
     for var in result:
-        f_p_i_j = var['name'].split('_')
-        if f_p_i_j[0] == 'z':
-            continue
         print(var)
-        p = int(f_p_i_j[1])
-        i = int(f_p_i_j[2])
-        j = int(f_p_i_j[3])
+        f_p_i_j = var['name'].split('_')
+        if 'f' in f_p_i_j[0]:
 
-        h_1 = hits[layers[p - 1]][i - 1]
-        h_2 = hits[layers[p]][j - 1]
-        segments.append([h_1, h_2])
+            p = int(f_p_i_j[1])
+            i = int(f_p_i_j[2])
+            j = int(f_p_i_j[3])
+
+            h_1 = hits[layers[p - 1]][i - 1]
+            h_2 = hits[layers[p]][j - 1]
+            segments.append([h_1, h_2])
 
     display(hits, segments, figure_path_out)
-    # return result
 
 
 def display(hits, segments, out=""):
@@ -150,15 +161,11 @@ def display(hits, segments, out=""):
 
 if __name__ == '__main__':
     src_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/data_selected'
-    data_path = src_path + '/15hits/know_track/hits.csv'
-    hits_volume = read_hits(data_path)
-    hits = hits_volume[9]
+    data_path = src_path + '/20hits/known_track/hits.csv'
+    hits = read_hits(data_path)[9]
 
-    model_path_out = "results/15hits/know_track/model_docplex.lp"
-    solution_path_out = "results/15hits/know_track/solution.json"
-    figure_path_out = "results/15hits/know_track/result.PNG"
+    model_path_out = "results/20hits/known_track/model_docplex_no_LB_dist.lp"
+    solution_path_out = "results/20hits/known_track/solution_no_LB_dist.json"
+    figure_path_out = "results/20hits/known_track/result_no_LB_dist.PNG"
 
-    run(hits, model_path_out, solution_path_out, figure_path_out)
-
-
-
+    result = run(hits, model_path_out, solution_path_out, figure_path_out)

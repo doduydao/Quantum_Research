@@ -31,9 +31,10 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
 
     objective = 0
     LB = 0
+    betas = []
     for p in range(1, no_layer - 1):
+        min_beta = 100000
         for i in range(1, no_hits + 1):
-            min_beta = 100000
             for j in range(1, no_hits + 1):
                 for k in range(1, no_hits + 1):
                     h_i = hits[layers[p - 1]][i - 1]
@@ -41,12 +42,19 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
                     h_k = hits[layers[p + 1]][k - 1]
                     seg_1 = Segment(h_j, h_i)
                     seg_2 = Segment(h_j, h_k)
-                    beta = Angle(seg_1=seg_1, seg_2=seg_2).angle * (distance(h_i, h_j) + distance(h_j, h_k))
+                    beta = Angle(seg_1=seg_1, seg_2=seg_2).angle * (distance(h_i, h_j)//100 + distance(h_j, h_k)//100)
+                    betas.append(beta)
                     if min_beta > beta:
                         min_beta = beta
                     objective += z[p, i, j, k] * beta
-            LB += min_beta
+        LB += min_beta
+    beta_upper = sum(betas)/len(betas)
 
+    for p in range(1, no_layer - 1):
+        for i in range(1, no_hits + 1):
+            for j in range(1, no_hits + 1):
+                for k in range(1, no_hits + 1):
+                    model.add_constraint(z[p, i, j, k] <= beta_upper)
     model.set_objective('min', objective)
 
     model.add_constraint(objective >= LB, ctname="LB of objective value")
@@ -64,7 +72,7 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
             count_constraint += 1
             model.add_constraint(tmp == 1, ctname=constraint_name)
     print("Number of first constraints:", count_constraint)
-    # print()
+
     # Second constraints:
     print("---Second constraints---")
     count_constraint = 0
@@ -77,6 +85,7 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
             count_constraint += 1
             model.add_constraint(tmp == 1, ctname=constraint_name)
     print("Number of second constraints:", count_constraint)
+
     # Addition constraints:
     print("---Addition constraints---")
     count_constraint = 0
@@ -114,17 +123,15 @@ def run(hits, model_path_out, solution_path_out, figure_path_out):
     segments = []
 
     for var in result:
-        f_p_i_j = var['name'].split('_')
-        if f_p_i_j[0] == 'z':
-            continue
         print(var)
-        p = int(f_p_i_j[1])
-        i = int(f_p_i_j[2])
-        j = int(f_p_i_j[3])
-
-        h_1 = hits[layers[p - 1]][i - 1]
-        h_2 = hits[layers[p]][j - 1]
-        segments.append([h_1, h_2])
+        f_p_i_j = var['name'].split('_')
+        if 'f' in f_p_i_j[0]:
+            p = int(f_p_i_j[1])
+            i = int(f_p_i_j[2])
+            j = int(f_p_i_j[3])
+            h_1 = hits[layers[p - 1]][i - 1]
+            h_2 = hits[layers[p]][j - 1]
+            segments.append([h_1, h_2])
 
     display(hits, segments, figure_path_out)
 
@@ -160,12 +167,12 @@ def display(hits, segments, out=""):
 
 if __name__ == '__main__':
     src_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/data_selected'
-    data_path = src_path + '/15hits/know_track/hits.csv'
+    data_path = src_path + '/20hits/known_track/hits.csv'
     hits_volume = read_hits(data_path)
     hits = hits_volume[9]
 
-    model_path_out = "results/15hits/know_track/model_docplex_strong_LB.lp"
-    solution_path_out = "results/15hits/know_track/solution.json"
-    figure_path_out = "results/15hits/know_track/result.PNG"
+    model_path_out = "results/20hits/known_track/model_docplex_strong_LB_dist.lp"
+    solution_path_out = "results/20hits/known_track/solution_strong_LB_dist.json"
+    figure_path_out = "results/20hits/known_track/result_strong_LB_dist.PNG"
 
     result = run(hits, model_path_out, solution_path_out, figure_path_out)

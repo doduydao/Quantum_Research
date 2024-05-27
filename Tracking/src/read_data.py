@@ -4,7 +4,6 @@ import random
 
 def read_hits(path):
     df = pd.read_csv(path)
-    # print(df)
     list_df = [row.tolist() for index, row in df.iterrows()]
     volumes = dict()
 
@@ -37,7 +36,7 @@ def read_hits(path):
 
 def select_hits_from_sublayer(hits, sublayer_selected, no_hits):
     sublayer_dict = dict()
-    for hit in hits:  # Hp : tập các hit có trên cùng 1 layer
+    for hit in hits:
         if hit.z not in sublayer_dict:
             sublayer_dict[hit.z] = [hit]
         else:
@@ -107,46 +106,6 @@ def decode_particle_id(data):
     for name, mask, shift in components:
         data[name] = (pid & mask) >> shift
     return data
-
-# def select_from_truth_hits(truth_path, no_truth_hits, hits_volume):
-#     df = pd.read_csv(truth_path)
-#     df = decode_particle_id(df)
-#     list_df = [row.tolist() for index, row in df.iterrows()]
-#     volumes = dict()
-#
-#     all_hits = []
-#     for i in list_df:
-#         hit = Hit(
-#             hit_id=i[0],
-#             particle_id = i[1],
-#             x=i[2],
-#             y=i[3],
-#             z=i[4]
-#         )
-#         all_hits.append(hit)
-#
-#     for p, hp in hits_volume.items():
-#         for h in hp:
-#
-#
-#
-#
-#     #     volume_id = int(hit.volume_id)
-#     #     if volume_id not in volumes:
-#     #         volumes[volume_id] = [hit]
-#     #     else:
-#     #         volumes[volume_id] += [hit]
-#     # for id, hits in volumes.items():
-#     #     layers = dict()
-#     #     for hit in hits:
-#     #         layer_id = int(hit.layer_id)
-#     #         if layer_id not in layers:
-#     #             layers[layer_id] = [hit]
-#     #         else:
-#     #             layers[layer_id] += [hit]
-#     #     volumes[id] = layers
-#
-#     return volumes
 
 if __name__ == '__main__':
     hits_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/event000001000/event000001000-hits.csv'

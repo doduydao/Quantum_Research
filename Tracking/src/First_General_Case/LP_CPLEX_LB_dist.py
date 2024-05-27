@@ -40,9 +40,7 @@ def run(hits, M, model_path_out, solution_path_out, figure_path_out):
     layers = sorted(list(hits.keys()))
     K = len(layers) + 1
     layers = [0] + layers + [0]
-    print("layers:", layers)
 
-    print("K=", K)
     # create_variables
     ob, phi, c = create_variables(model, hits)
 
@@ -50,8 +48,8 @@ def run(hits, M, model_path_out, solution_path_out, figure_path_out):
     min_nt = min(nts)
 
     # First constraints:
-    print("---Zero constraints---")
-    count_constraint_0 = 0
+    print("---First constraints---")
+    cc_1 = 0
     for p_1 in range(2, K):
         n_p_1 = len(hits[layers[p_1]]) + 1
         for i in range(1, n_p_1):
@@ -60,9 +58,9 @@ def run(hits, M, model_path_out, solution_path_out, figure_path_out):
                 n_p_2 = len(hits[layers[p_2]]) + 1
                 for j in range(1, n_p_2):
                     tmp += phi[p_2, p_1, j, i]
-            count_constraint_0 += 1
-            c0 = "ZC_" + str(count_constraint_0)
-            model.add_constraint(tmp <= 1, ctname=c0)
+            cc_1 += 1
+            cn = "FC_" + str(cc_1)
+            model.add_constraint(tmp <= 1, ctname=cn)
 
     # First constraints:
     print("---First constraints---")

@@ -5,37 +5,12 @@ import json
 import matplotlib.pyplot as plt
 
 
-def calculate_all_angles(hits, out):
-    # tính tất cả các góc nhỏ nhất theo layer
-    angles = dict()
-    layers = list(hits.keys())
-    no_layer = len(layers)
-    no_hits = len(hits[2])
-    for p in range(0, no_layer - 2):
-        min_angle = 100000000
-        for i in range(0, no_hits):
-            for j in range(0, no_hits):
-                for k in range(0, no_hits):
-                    h_i = hits[layers[p]][i - 1]
-                    h_j = hits[layers[p + 1]][j - 1]
-                    h_k = hits[layers[p + 2]][k - 1]
-                    seg_1 = Segment(h_j, h_i)
-                    seg_2 = Segment(h_j, h_k)
-                    tmp_angle = Angle(seg_1=seg_1, seg_2=seg_2).angle * (distance(h_i, h_j) + distance(h_j, h_k))
-                    if min_angle > tmp_angle:
-                        min_angle = tmp_angle
-        angles[layers[p + 1]] = min_angle * len(hits[layers[p + 1]])
-    with open(out, 'w') as file:
-        json.dump(angles, file)
-    return angles
-
-
 def distance(h1, h2):
     distance = math.sqrt((h2.x - h1.x) ** 2 + (h2.y - h1.y) ** 2 + (h2.z - h1.z) ** 2)
     return distance
 
 
-def run(hits, LB, model_path_out, solution_path_out, figure_path_out):
+def run(hits, model_path_out, solution_path_out, figure_path_out):
     model = Model(name="Track")
     layers = list(hits.keys())
     print("layers:", layers)
@@ -54,7 +29,10 @@ def run(hits, LB, model_path_out, solution_path_out, figure_path_out):
          range(1, no_hits + 1)], name="z", lb=0, ub=1)
 
     objective = 0
+    LB = 0
+
     for p in range(1, no_layer - 1):
+        beta_lower = 100000
         for i in range(1, no_hits + 1):
             for j in range(1, no_hits + 1):
                 for k in range(1, no_hits + 1):
@@ -63,11 +41,16 @@ def run(hits, LB, model_path_out, solution_path_out, figure_path_out):
                     h_k = hits[layers[p + 1]][k - 1]
                     seg_1 = Segment(h_j, h_i)
                     seg_2 = Segment(h_j, h_k)
-                    beta = Angle(seg_1=seg_1, seg_2=seg_2).angle * (distance(h_i, h_j) + distance(h_j, h_k))
+                    angle = Angle(seg_1=seg_1, seg_2=seg_2).angle
+                    dist = distance(h_i, h_j) + distance(h_j, h_k)
+                    beta = angle * dist
+                    if beta < beta_lower:
+                        beta_lower = beta
                     objective += z[p, i, j, k] * beta
+        LB += beta_lower
     model.set_objective('min', objective)
 
-    model.add_constraint(objective >= LB, ctname="LB of objective value")
+    model.add_constraint(objective >= LB * no_hits, ctname="LB of objective value")
 
     # Constraints
     # first constraints:
@@ -132,17 +115,17 @@ def run(hits, LB, model_path_out, solution_path_out, figure_path_out):
     segments = []
 
     for var in result:
-        f_p_i_j = var['name'].split('_')
-        if f_p_i_j[0] == 'z':
-            continue
         print(var)
-        p = int(f_p_i_j[1])
-        i = int(f_p_i_j[2])
-        j = int(f_p_i_j[3])
+        f_p_i_j = var['name'].split('_')
+        if 'f' in f_p_i_j[0]:
 
-        h_1 = hits[layers[p - 1]][i - 1]
-        h_2 = hits[layers[p]][j - 1]
-        segments.append([h_1, h_2])
+            p = int(f_p_i_j[1])
+            i = int(f_p_i_j[2])
+            j = int(f_p_i_j[3])
+
+            h_1 = hits[layers[p - 1]][i - 1]
+            h_2 = hits[layers[p]][j - 1]
+            segments.append([h_1, h_2])
 
     display(hits, segments, figure_path_out)
 
@@ -178,16 +161,11 @@ def display(hits, segments, out=""):
 
 if __name__ == '__main__':
     src_path = '/Users/doduydao/daodd/PycharmProjects/Quantum_Research/Tracking/src/data_selected'
-    data_path = src_path + '/15hits/know_track/hits.csv'
-    hits_volume = read_hits(data_path)
-    hits = hits_volume[9]
+    data_path = src_path + '/20hits/known_track/hits.csv'
+    hits = read_hits(data_path)[9]
 
-    out_angles_path = "results/15hits/min_angles.json"
-    angles = calculate_all_angles(hits, out_angles_path)
-    LB = sum(list(angles.values()))
+    model_path_out = "results/20hits/known_track/model_docplex_LB_dist.lp"
+    solution_path_out = "results/20hits/known_track/solution_LB_dist.json"
+    figure_path_out = "results/20hits/known_track/result_LB_dist.PNG"
 
-    model_path_out = "results/15hits/know_track/model_docplex_LB_dist.lp"
-    solution_path_out = "results/15hits/know_track/solution.json"
-    figure_path_out = "results/15hits/know_track/result.PNG"
-
-    result = run(hits, LB, model_path_out, solution_path_out, figure_path_out)
+    result = run(hits, model_path_out, solution_path_out, figure_path_out)
